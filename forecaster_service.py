@@ -28,7 +28,7 @@ def TDForecasting(horizon=None):
         message = {
                 'status': 200,
                 'message': 'The selected horizon is {}!'.format(horizon),
-                'forecast': json.loads(results),
+                'forecast': results,
     	}
         resp = jsonify(message)
         resp.status_code = 200
@@ -131,6 +131,8 @@ def build_and_train(horizon):
     dataset_date = pd.read_csv('apache_kafka_measures.csv', sep=";", usecols = ['date'])
     
     df_forecast = pd.DataFrame()
+    dict_result = {}
+    list_forecasts = []
 
     # Make forecasts using the Direct approach, i.e. train separate models for each forecasting horizon
     for intermediate_horizon in range (1, horizon+1):
@@ -165,13 +167,13 @@ def build_and_train(horizon):
                         'x': dataset_date['date'].iloc[len(dataset_date['date'])-(horizon-intermediate_horizon+1)],
                         'y': y_pred[0]
                     }
-        df_forecast = df_forecast.append(temp_dict, ignore_index = True)
+        list_forecasts.append(temp_dict)
         
     # Convert forecasts dataframe to JSON
-    json_df_forecast = df_forecast.to_json(orient = 'records')
+    dict_result['forecasts'] = list_forecasts
     
 #    print(print_df_forecast)
-    print(df_forecast)
-    return(json_df_forecast)
+    print(dict_result)
+    return(dict_result)
     
-build_and_train(5)
+#build_and_train(5)
