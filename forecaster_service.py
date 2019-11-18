@@ -15,19 +15,21 @@ def TDForecasting(horizon=None):
     """API Call
 
     horizon (sent as URL query parameter) from API Call
-    model  (sent as URL query parameter) from API Call
+    regressor (sent as URL query parameter) from API Call
     """
-    horizon = request.args.get("horizon") # if key doesn't exist, returns None
-    model = request.args.get("model") # if key doesn't exist, returns None
+    horizon_param = request.args.get("horizon") # if key doesn't exist, returns None
+    regressor_param = request.args.get("regressor") # if key doesn't exist, returns None
     
-    if horizon is None:
+    if horizon_param is None:
         return(bad_request())
     else:
-        results = build_and_train(int(horizon))
+        if regressor_param is None: regressor_param = 'auto'
+        
+        results = build_and_train(int(horizon_param), regressor_param)
         
         message = {
                 'status': 200,
-                'message': 'The selected horizon is {}!'.format(horizon),
+                'message': 'The selected horizon is {}!'.format(horizon_param),
                 'forecast': results,
     	}
         resp = jsonify(message)
@@ -84,6 +86,7 @@ def series_to_supervised(dataset, n_in=1, n_out=1, dropnan=True):
     Returns:
         Pandas DataFrame of series framed for supervised learning.
     """
+    
     data = dataset.values
     labels = dataset.columns.tolist()
     n_vars = 1 if type(data) is list else data.shape[1]
@@ -108,13 +111,111 @@ def series_to_supervised(dataset, n_in=1, n_out=1, dropnan=True):
         agg.dropna(inplace=True)
     return agg
 
-def build_and_train(horizon):
+def create_regressor(reg_type, X, Y):   
+    
+    from sklearn.pipeline import Pipeline
+    from sklearn.preprocessing import StandardScaler
+    scaler = StandardScaler()
+        
+    # Create the regressor model
+    if reg_type == 'linear_regression':
+        # Fitting Multiple Linear Regression to the Training set
+        from sklearn.linear_model import LinearRegression
+        regressor = LinearRegression()
+        pipeline = Pipeline([('regressor', regressor)])
+    elif reg_type == 'lasso_regression':
+        # Fitting Lasso Regression to the Training set
+        from sklearn.linear_model import Lasso
+        regressor = Lasso(alpha = 100000)
+        pipeline = Pipeline([('regressor', regressor)])
+    elif reg_type == 'ridge_regression':
+        # Fitting Ridge Regression to the Training set
+        from sklearn.linear_model import Ridge
+        regressor = Ridge(alpha = 1000000)
+        pipeline = Pipeline([('regressor', regressor)])
+    elif reg_type == 'svr_linear':
+        # Fitting linear SVR to the dataset
+        from sklearn.svm import SVR
+        regressor = SVR(kernel = 'linear', C = 10000)
+        pipeline = Pipeline([('scaler', scaler), ('regressor', regressor)])
+    elif reg_type == 'svr_rbf':
+        # Fitting SVR to the dataset
+        from sklearn.svm import SVR
+        regressor = SVR(kernel = 'rbf', gamma = 0.01, C = 10000)
+        pipeline = Pipeline([('scaler', scaler), ('regressor', regressor)])
+    elif reg_type == 'random_forest':
+        # Fitting Random Forest Regression to the dataset
+        from sklearn.ensemble import RandomForestRegressor
+        regressor = RandomForestRegressor(n_estimators = 100, random_state = 0)
+        pipeline = Pipeline([('regressor', regressor)])
+    elif reg_type == 'auto':
+        # Chosing regressor based on best score
+        from sklearn.linear_model import LinearRegression, Lasso, Ridge
+        from sklearn.svm import SVR
+        from sklearn.ensemble import RandomForestRegressor
+        from sklearn.model_selection import cross_validate
+        from sklearn.model_selection import TimeSeriesSplit
+        from sklearn.metrics.scorer import make_scorer
+        from math import sqrt
+        from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+        
+        def mean_absolute_percentage_error(y_true, y_pred): 
+            return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
+    
+        def root_mean_squared_error(y_true, y_pred): 
+            return sqrt(mean_squared_error(y_true, y_pred))
+        
+        tscv = TimeSeriesSplit(n_splits=5)
+        
+        # Applying TimeSeriesSplit Validation
+        scorer = {'neg_mean_absolute_error': 'neg_mean_absolute_error', 'neg_mean_squared_error': 'neg_mean_squared_error', 'r2': 'r2', 'mean_absolute_percentage_error': make_scorer(mean_absolute_percentage_error, greater_is_better=False), 'root_mean_squared_error': make_scorer(root_mean_squared_error, greater_is_better=False)}
+        
+        scores = cross_validate(estimator = LinearRegression(), X = X, y = Y.ravel(), scoring = scorer, cv = tscv, return_train_score = False)
+        best_score = scores['test_r2'].mean()
+        best_regressor = LinearRegression()
+        print(scores['test_r2'].mean())
+        
+        scores = cross_validate(estimator = Lasso(alpha = 100000), X = X, y = Y.ravel(), scoring = scorer, cv = tscv, return_train_score = False)
+        if scores['test_r2'].mean() > best_score:
+            best_score = scores['test_r2'].mean()
+            best_regressor = Lasso(alpha = 100000)
+        print(scores['test_r2'].mean())
+        
+        scores = cross_validate(estimator = Ridge(alpha = 1000000), X = X, y = Y.ravel(), scoring = scorer, cv = tscv, return_train_score = False)
+        if scores['test_r2'].mean() > best_score:
+            best_score = scores['test_r2'].mean()
+            best_regressor = Ridge(alpha = 1000000)
+        print(scores['test_r2'].mean())
+        
+        scores = cross_validate(estimator = RandomForestRegressor(n_estimators = 100, random_state = 0), X = X, y = Y.ravel(), scoring = scorer, cv = tscv, return_train_score = False)
+        if scores['test_r2'].mean() > best_score:
+            best_score = scores['test_r2'].mean()
+            best_regressor = RandomForestRegressor(n_estimators = 100, random_state = 0)
+        print(scores['test_r2'].mean())
+        
+#        regressor = 
+#        regressor = Ridge(alpha = 1000000)
+#        regressor = SVR(kernel = 'linear', C = 10000)
+#        regressor = SVR(kernel = 'rbf', gamma = 0.01, C = 10000)
+#        regressor = RandomForestRegressor(n_estimators = 100, random_state = 0)
+        
+        
+        regressor = best_regressor
+        
+        pipeline = Pipeline([('regressor', regressor)])
+        
+    pipeline.fit(X, Y.ravel())
+    
+    return pipeline
+
+def build_and_train(horizon_param, regressor_param):
     """
     Build forecasting models and return forecasts for an horizon specified by the user.
     Arguments:
-        horizon: The forecasting horizon up to which forecasts will be produced.
+        horizon_param: The forecasting horizon up to which forecasts will be produced.
+        regressor_param: The regressor models that will be used to produce forecasts.
     Returns:
-        A JSON object containing forecasted values for each intermediate step ahead up to the specified horizon.
+        A dictionary containing forecasted values for each intermediate step ahead up to the specified horizon.
     """
     
     # selecting indicators that will be used as model variables
@@ -130,12 +231,11 @@ def build_and_train(horizon):
     # Read dataset date
     dataset_date = pd.read_csv('apache_kafka_measures.csv', sep=";", usecols = ['date'])
     
-    df_forecast = pd.DataFrame()
     dict_result = {}
     list_forecasts = []
 
     # Make forecasts using the Direct approach, i.e. train separate models for each forecasting horizon
-    for intermediate_horizon in range (1, horizon+1):
+    for intermediate_horizon in range (1, horizon_param+1):
         # Add time-shifted prior and future period
         data = series_to_supervised(dataset, n_in = WINDOW_SIZE)
         
@@ -152,28 +252,28 @@ def build_and_train(horizon):
         
         # Split data to training/test set
         from sklearn.model_selection import train_test_split
-        X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size = horizon, random_state = 0, shuffle = False)
+        X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size = horizon_param, random_state = 0, shuffle = False)
         
         # Fit Random Forest Regression to the dataset
-        from sklearn.ensemble import RandomForestRegressor
-        regressor = RandomForestRegressor(n_estimators = 100, random_state = 0)
-        regressor.fit(X_train, Y_train.ravel())
+#        from sklearn.ensemble import RandomForestRegressor
+#        regressor = RandomForestRegressor(n_estimators = 100, random_state = 0)
+#        regressor.fit(X_train, Y_train.ravel())
         
         # Make predictions
+        regressor = create_regressor(regressor_param, X_train, Y_train)
         y_pred = regressor.predict(X_test)
     
         # Fill dataframe with forecasts
         temp_dict = {
-                        'x': dataset_date['date'].iloc[len(dataset_date['date'])-(horizon-intermediate_horizon+1)],
+                        'x': dataset_date['date'].iloc[len(dataset_date['date'])-(horizon_param-intermediate_horizon+1)],
                         'y': y_pred[0]
                     }
         list_forecasts.append(temp_dict)
         
-    # Convert forecasts dataframe to JSON
+    # Fill results dictionary with forecasts
     dict_result['forecasts'] = list_forecasts
     
-#    print(print_df_forecast)
     print(dict_result)
     return(dict_result)
     
-#build_and_train(5)
+build_and_train(5, 'auto')
