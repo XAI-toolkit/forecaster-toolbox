@@ -65,7 +65,8 @@ import pandas as pd
     
 def mean_absolute_percentage_error(y_true, y_pred):
     """
-    Calculate mean absolute percentage error (MAPE) between 2 lists of observations.
+    Calculate mean absolute percentage error (MAPE) between 2 lists of 
+    observations.
     Arguments:
         y_true: Real value of observations as a list or NumPy array.
         y_pred: Forecasted value of observations as a list or NumPy array.
@@ -74,6 +75,21 @@ def mean_absolute_percentage_error(y_true, y_pred):
     """
     
     return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
+
+def root_mean_squared_error(y_true, y_pred):
+    """
+    Calculate root mean squared error (RMSE) between 2 lists of observations.
+    Arguments:
+        y_true: Real value of observations as a list or NumPy array.
+        y_pred: Forecasted value of observations as a list or NumPy array.
+    Returns:
+        A value indicating the RMSE.
+    """
+    
+    from math import sqrt
+    from sklearn.metrics import mean_squared_error
+    
+    return sqrt(mean_squared_error(y_true, y_pred))
 
 def series_to_supervised(dataset, n_in=1, n_out=1, dropnan=True):
     """
@@ -92,10 +108,12 @@ def series_to_supervised(dataset, n_in=1, n_out=1, dropnan=True):
     n_vars = 1 if type(data) is list else data.shape[1]
     df = pd.DataFrame(data)
     cols, names = list(), list()
+    
     # input sequence (t-n, ... t-1)
     for i in range(n_in, 0, -1):
         cols.append(df.shift(i))
         names += [('%s(t-%d)' % (labels[j], i)) for j in range(n_vars)]
+        
     # forecast sequence (t, t+1, ... t+n)
     for i in range(0, n_out):
         cols.append(df.shift(-i))
@@ -103,106 +121,100 @@ def series_to_supervised(dataset, n_in=1, n_out=1, dropnan=True):
             names += [('%s(t)' % (labels[j])) for j in range(n_vars)]
         else:
             names += [('%s(t+%d)' % (labels[j], i)) for j in range(n_vars)]
+            
     # put it all together
     agg = pd.concat(cols, axis=1)
     agg.columns = names
+    
     # drop rows with NaN values
     if dropnan:
         agg.dropna(inplace=True)
+    
     return agg
 
-def create_regressor(reg_type, X, Y):   
+def cross_validation_best(pipelines, X, Y):
+    """
+    Perform TimeSeriesSplit Validation to a list of models and return best based
+    on R2 error minimization.
+    Arguments:
+        pipelines: A list of models integrated into a Pipeline.
+        X: Independent variable values of observations as a NumPy array.
+        Y: Dependent variable values of observations as a NumPy array.
+    Returns:
+        The best model integrated into a Pipeline.
+    """
     
+    from sklearn.model_selection import TimeSeriesSplit
+    from sklearn.model_selection import cross_validate
+    from sklearn.metrics.scorer import make_scorer    
+
+    # Chosing regressor based on best score during TimeSeriesSplit Validation
+    tscv = TimeSeriesSplit(n_splits=5) 
+    
+    # Scores that will be computed during TimeSeriesSplit Validation
+    scorer = {'neg_mean_absolute_error': 'neg_mean_absolute_error', 'neg_mean_squared_error': 'neg_mean_squared_error', 'r2': 'r2', 'mean_absolute_percentage_error': make_scorer(mean_absolute_percentage_error, greater_is_better=False), 'root_mean_squared_error': make_scorer(root_mean_squared_error, greater_is_better=False)}
+        
+    # Perform TimeSeriesSplit Validation and compute metrics
+    best_score = float('-inf')
+    best_regressor = None
+    for p in pipelines:
+        scores = cross_validate(estimator = p, X = X, y = Y.ravel(), scoring = scorer, cv = tscv, return_train_score = False)
+        if scores['test_r2'].mean() > best_score:
+            best_score = scores['test_r2'].mean()
+            best_regressor = p
+    
+    return best_regressor
+
+def create_regressor(reg_type, X, Y):   
+    """
+    Create and train a regressor based on given X and Y values. Regressor type
+    can be provided manually by the user or selected automatically based on R2 
+    error minimization.
+    Arguments:
+        reg_type: Type of regressor as a string.
+        X: Independent variable values of observations as a NumPy array.
+        Y: Dependent variable values of observations as a NumPy array.
+    Returns:
+        A fitted sklearn model integrated into a Pipeline.
+    """
+    
+    from sklearn.linear_model import LinearRegression, Lasso, Ridge
+    from sklearn.svm import SVR
+    from sklearn.ensemble import RandomForestRegressor
     from sklearn.pipeline import Pipeline
+    
     from sklearn.preprocessing import StandardScaler
+    
     scaler = StandardScaler()
         
     # Create the regressor model
     if reg_type == 'linear_regression':
         # Fitting Multiple Linear Regression to the Training set
-        from sklearn.linear_model import LinearRegression
         regressor = LinearRegression()
         pipeline = Pipeline([('regressor', regressor)])
     elif reg_type == 'lasso_regression':
         # Fitting Lasso Regression to the Training set
-        from sklearn.linear_model import Lasso
         regressor = Lasso(alpha = 100000)
         pipeline = Pipeline([('regressor', regressor)])
     elif reg_type == 'ridge_regression':
         # Fitting Ridge Regression to the Training set
-        from sklearn.linear_model import Ridge
         regressor = Ridge(alpha = 1000000)
         pipeline = Pipeline([('regressor', regressor)])
     elif reg_type == 'svr_linear':
         # Fitting linear SVR to the dataset
-        from sklearn.svm import SVR
         regressor = SVR(kernel = 'linear', C = 10000)
         pipeline = Pipeline([('scaler', scaler), ('regressor', regressor)])
     elif reg_type == 'svr_rbf':
         # Fitting SVR to the dataset
-        from sklearn.svm import SVR
         regressor = SVR(kernel = 'rbf', gamma = 0.01, C = 10000)
         pipeline = Pipeline([('scaler', scaler), ('regressor', regressor)])
     elif reg_type == 'random_forest':
         # Fitting Random Forest Regression to the dataset
-        from sklearn.ensemble import RandomForestRegressor
         regressor = RandomForestRegressor(n_estimators = 100, random_state = 0)
         pipeline = Pipeline([('regressor', regressor)])
     elif reg_type == 'auto':
-        # Chosing regressor based on best score
-        from sklearn.linear_model import LinearRegression, Lasso, Ridge
-        from sklearn.svm import SVR
-        from sklearn.ensemble import RandomForestRegressor
-        from sklearn.model_selection import cross_validate
-        from sklearn.model_selection import TimeSeriesSplit
-        from sklearn.metrics.scorer import make_scorer
-        from math import sqrt
-        from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-        
-        def mean_absolute_percentage_error(y_true, y_pred): 
-            return np.mean(np.abs((y_true - y_pred) / y_true)) * 100
-    
-        def root_mean_squared_error(y_true, y_pred): 
-            return sqrt(mean_squared_error(y_true, y_pred))
-        
-        tscv = TimeSeriesSplit(n_splits=5)
-        
-        # Applying TimeSeriesSplit Validation
-        scorer = {'neg_mean_absolute_error': 'neg_mean_absolute_error', 'neg_mean_squared_error': 'neg_mean_squared_error', 'r2': 'r2', 'mean_absolute_percentage_error': make_scorer(mean_absolute_percentage_error, greater_is_better=False), 'root_mean_squared_error': make_scorer(root_mean_squared_error, greater_is_better=False)}
-        
-        scores = cross_validate(estimator = LinearRegression(), X = X, y = Y.ravel(), scoring = scorer, cv = tscv, return_train_score = False)
-        best_score = scores['test_r2'].mean()
-        best_regressor = LinearRegression()
-        print(scores['test_r2'].mean())
-        
-        scores = cross_validate(estimator = Lasso(alpha = 100000), X = X, y = Y.ravel(), scoring = scorer, cv = tscv, return_train_score = False)
-        if scores['test_r2'].mean() > best_score:
-            best_score = scores['test_r2'].mean()
-            best_regressor = Lasso(alpha = 100000)
-        print(scores['test_r2'].mean())
-        
-        scores = cross_validate(estimator = Ridge(alpha = 1000000), X = X, y = Y.ravel(), scoring = scorer, cv = tscv, return_train_score = False)
-        if scores['test_r2'].mean() > best_score:
-            best_score = scores['test_r2'].mean()
-            best_regressor = Ridge(alpha = 1000000)
-        print(scores['test_r2'].mean())
-        
-        scores = cross_validate(estimator = RandomForestRegressor(n_estimators = 100, random_state = 0), X = X, y = Y.ravel(), scoring = scorer, cv = tscv, return_train_score = False)
-        if scores['test_r2'].mean() > best_score:
-            best_score = scores['test_r2'].mean()
-            best_regressor = RandomForestRegressor(n_estimators = 100, random_state = 0)
-        print(scores['test_r2'].mean())
-        
-#        regressor = 
-#        regressor = Ridge(alpha = 1000000)
-#        regressor = SVR(kernel = 'linear', C = 10000)
-#        regressor = SVR(kernel = 'rbf', gamma = 0.01, C = 10000)
-#        regressor = RandomForestRegressor(n_estimators = 100, random_state = 0)
-        
-        
-        regressor = best_regressor
-        
-        pipeline = Pipeline([('regressor', regressor)])
+        pipelines = [Pipeline([('regressor', LinearRegression())]), Pipeline([('regressor', Lasso(alpha = 100000))]), Pipeline([('regressor', Ridge(alpha = 1000000))]), Pipeline([('regressor', Ridge(alpha = 1000000))]), Pipeline([('scaler', scaler), ('regressor', SVR(kernel = 'rbf', gamma = 0.01, C = 10000))]), Pipeline([('regressor', RandomForestRegressor(n_estimators = 100, random_state = 0))])]
+        pipeline = cross_validation_best(pipelines, X, Y)
         
     pipeline.fit(X, Y.ravel())
     
@@ -276,4 +288,4 @@ def build_and_train(horizon_param, regressor_param):
     print(dict_result)
     return(dict_result)
     
-build_and_train(5, 'auto')
+#build_and_train(5, 'auto')
