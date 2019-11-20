@@ -60,8 +60,26 @@ def bad_request(error=None):
 
 
 
+
+
+
+
+
+
+
+
+
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import GridSearchCV, TimeSeriesSplit, cross_validate, train_test_split
+from sklearn.linear_model import LinearRegression, Lasso, Ridge
+from sklearn.svm import SVR
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import mean_squared_error
+from sklearn.metrics.scorer import make_scorer
+from math import sqrt
     
 def mean_absolute_percentage_error(y_true, y_pred):
     """
@@ -86,16 +104,13 @@ def root_mean_squared_error(y_true, y_pred):
         A value indicating the RMSE.
     """
     
-    from math import sqrt
-    from sklearn.metrics import mean_squared_error
-    
     return sqrt(mean_squared_error(y_true, y_pred))
 
 def series_to_supervised(dataset, n_in=1, n_out=1, dropnan=True):
     """
     Frame a time series as a supervised learning dataset.
     Arguments:
-        data: Sequence of observations as a list or NumPy array.
+        dataset: Sequence of observations as a list or NumPy array.
         n_in: Number of lag observations as input (X).
         n_out: Number of observations as output (y).
         dropnan: Boolean whether or not to drop rows with NaN values.
@@ -132,7 +147,61 @@ def series_to_supervised(dataset, n_in=1, n_out=1, dropnan=True):
     
     return agg
 
-def cross_validation_best(pipelines, X, Y):
+def grid_search_best(reg_type, X, Y):
+    """
+    Perform Grid Search on a model and return best hyper-parameters based on R2 
+    error minimization.
+    Arguments:
+        reg_type: Type of regressor as a string.
+        X: Independent variable values of observations as a NumPy array.
+        Y: Dependent variable values of observations as a NumPy array.
+    Returns:
+        The best model hyper-parameters as a dict.
+    """
+
+    # Chosing hyperparameters based on best score during TimeSeriesSplit Validation
+    tscv = TimeSeriesSplit(n_splits=5) 
+    
+    scaler = StandardScaler()
+    
+    # Create the regressor model and parameters range
+    if reg_type == 'lasso_regression':
+        regressor = Lasso()
+        pipeline = Pipeline([('regressor', regressor)])
+        parameters = {'regressor__alpha': [1, 10, 100, 1000, 100000, 1000000, 10000000]}
+    elif reg_type == 'ridge_regression':
+        regressor = Ridge()
+        pipeline = Pipeline([('regressor', regressor)])
+        parameters = {'regressor__alpha': [1, 10, 100, 1000, 100000, 1000000, 10000000]}
+    elif reg_type == 'svr_linear':
+        # Fitting linear SVR to the dataset
+        regressor = SVR(kernel = 'linear')
+        pipeline = Pipeline([('scaler', scaler), ('regressor', regressor)])
+        parameters = {'regressor__C': [0.1, 1, 10, 100, 1000, 10000, 100000]}
+    elif reg_type == 'svr_rbf':
+        # Fitting SVR to the dataset
+        regressor = SVR(kernel = 'rbf')
+        pipeline = Pipeline([('scaler', scaler), ('regressor', regressor)])
+        parameters = {'regressor__C': [0.1, 1, 10, 100, 1000, 10000, 100000], 'regressor__gamma' : [1, 0.1, 0.01, 0.001]}
+    elif reg_type == 'random_forest':
+        # Fitting Random Forest Regression to the dataset
+        regressor = RandomForestRegressor()
+        pipeline = Pipeline([('regressor', regressor)])
+        parameters = {'regressor__n_estimators' : [5, 10, 100, 500], 'regressor__max_depth': [5, 10]}
+        
+    # Perform Grid Search
+    grid_search = GridSearchCV(pipeline, parameters, cv = tscv)
+    grid_search = grid_search.fit(X, Y.ravel())
+    
+    # best_accuracy = grid_search.best_score_
+    best_parameters = grid_search.best_params_
+    
+    print('=========================== Grid Search ===========================')
+    print(' - Regressor: ', reg_type)
+    print(' - Best Parameters: ', best_parameters)
+    return best_parameters
+
+def cross_validation_best(pipes, X, Y):
     """
     Perform TimeSeriesSplit Validation to a list of models and return best based
     on R2 error minimization.
@@ -143,10 +212,6 @@ def cross_validation_best(pipelines, X, Y):
     Returns:
         The best model integrated into a Pipeline.
     """
-    
-    from sklearn.model_selection import TimeSeriesSplit
-    from sklearn.model_selection import cross_validate
-    from sklearn.metrics.scorer import make_scorer    
 
     # Chosing regressor based on best score during TimeSeriesSplit Validation
     tscv = TimeSeriesSplit(n_splits=5) 
@@ -157,12 +222,15 @@ def cross_validation_best(pipelines, X, Y):
     # Perform TimeSeriesSplit Validation and compute metrics
     best_score = float('-inf')
     best_regressor = None
-    for p in pipelines:
-        scores = cross_validate(estimator = p, X = X, y = Y.ravel(), scoring = scorer, cv = tscv, return_train_score = False)
+    for pipe in pipes:
+        scores = cross_validate(estimator = pipe, X = X, y = Y.ravel(), scoring = scorer, cv = tscv, return_train_score = False)
         if scores['test_r2'].mean() > best_score:
             best_score = scores['test_r2'].mean()
-            best_regressor = p
+            best_regressor = pipe
     
+    print('=================== TimeSeriesSplit Validation ====================')
+    print(' - Best Regressor: ', best_regressor)
+    print(' - Best Score: ', best_score)
     return best_regressor
 
 def create_regressor(reg_type, X, Y):   
@@ -178,13 +246,6 @@ def create_regressor(reg_type, X, Y):
         A fitted sklearn model integrated into a Pipeline.
     """
     
-    from sklearn.linear_model import LinearRegression, Lasso, Ridge
-    from sklearn.svm import SVR
-    from sklearn.ensemble import RandomForestRegressor
-    from sklearn.pipeline import Pipeline
-    
-    from sklearn.preprocessing import StandardScaler
-    
     scaler = StandardScaler()
         
     # Create the regressor model
@@ -194,28 +255,52 @@ def create_regressor(reg_type, X, Y):
         pipeline = Pipeline([('regressor', regressor)])
     elif reg_type == 'lasso_regression':
         # Fitting Lasso Regression to the Training set
-        regressor = Lasso(alpha = 100000)
+        best_parameters = grid_search_best('lasso_regression', X, Y)
+        regressor = Lasso(alpha = best_parameters['regressor__alpha'])
         pipeline = Pipeline([('regressor', regressor)])
     elif reg_type == 'ridge_regression':
         # Fitting Ridge Regression to the Training set
-        regressor = Ridge(alpha = 1000000)
+        best_parameters = grid_search_best('ridge_regression', X, Y)
+        regressor = Ridge(alpha = best_parameters['regressor__alpha'])
         pipeline = Pipeline([('regressor', regressor)])
     elif reg_type == 'svr_linear':
         # Fitting linear SVR to the dataset
-        regressor = SVR(kernel = 'linear', C = 10000)
+        best_parameters = grid_search_best('svr_linear', X, Y)
+        regressor = SVR(kernel = 'linear', C = best_parameters['regressor__C'])
         pipeline = Pipeline([('scaler', scaler), ('regressor', regressor)])
     elif reg_type == 'svr_rbf':
         # Fitting SVR to the dataset
-        regressor = SVR(kernel = 'rbf', gamma = 0.01, C = 10000)
+        best_parameters = grid_search_best('svr_rbf', X, Y)
+        regressor = SVR(kernel = 'rbf', gamma = best_parameters['regressor__gamma'], C = best_parameters['regressor__C'])
         pipeline = Pipeline([('scaler', scaler), ('regressor', regressor)])
     elif reg_type == 'random_forest':
         # Fitting Random Forest Regression to the dataset
-        regressor = RandomForestRegressor(n_estimators = 100, random_state = 0)
+        best_parameters = grid_search_best('random_forest', X, Y)
+        regressor = RandomForestRegressor(n_estimators = best_parameters['regressor__n_estimators'], max_depth = best_parameters['regressor__max_depth'], random_state = 0)
         pipeline = Pipeline([('regressor', regressor)])
     elif reg_type == 'auto':
-        pipelines = [Pipeline([('regressor', LinearRegression())]), Pipeline([('regressor', Lasso(alpha = 100000))]), Pipeline([('regressor', Ridge(alpha = 1000000))]), Pipeline([('regressor', Ridge(alpha = 1000000))]), Pipeline([('scaler', scaler), ('regressor', SVR(kernel = 'rbf', gamma = 0.01, C = 10000))]), Pipeline([('regressor', RandomForestRegressor(n_estimators = 100, random_state = 0))])]
-        pipeline = cross_validation_best(pipelines, X, Y)
-        
+        # Fitting Multiple Linear Regression to the Training set
+        regressor_linear = LinearRegression()
+        # Fitting Lasso Regression to the Training set
+        best_parameters = grid_search_best('lasso_regression', X, Y)
+        regressor_lasso = Lasso(alpha = best_parameters['regressor__alpha'])
+        # Fitting Ridge Regression to the Training set
+        best_parameters = grid_search_best('ridge_regression', X, Y)
+        regressor_ridge = Ridge(alpha = best_parameters['regressor__alpha'])
+        # Fitting linear SVR to the dataset
+        best_parameters = grid_search_best('svr_linear', X, Y)
+        regressor_svr_linear = SVR(kernel = 'linear', C = best_parameters['regressor__C'])
+        # Fitting SVR to the dataset
+        best_parameters = grid_search_best('svr_rbf', X, Y)
+        regressor_svr_rbf = SVR(kernel = 'rbf', gamma = best_parameters['regressor__gamma'], C = best_parameters['regressor__C'])
+        # Fitting Random Forest Regression to the dataset
+        best_parameters = grid_search_best('random_forest', X, Y)
+        regressor_random_forest = RandomForestRegressor(n_estimators = best_parameters['regressor__n_estimators'], max_depth = best_parameters['regressor__max_depth'], random_state = 0)
+        # Perform TimeSeriesSplit Validation and return best model
+        pipes = [Pipeline([('regressor', regressor_linear)]), Pipeline([('regressor', regressor_lasso)]), Pipeline([('regressor', regressor_ridge)]), Pipeline([('scaler', scaler), ('regressor', regressor_svr_linear)]), Pipeline([('scaler', scaler), ('regressor', regressor_svr_rbf)]), Pipeline([('regressor', regressor_random_forest)])]
+        pipeline = cross_validation_best(pipes, X, Y)
+    
+    # Fit selected model to the dataset
     pipeline.fit(X, Y.ravel())
     
     return pipeline
@@ -263,15 +348,10 @@ def build_and_train(horizon_param, regressor_param):
         Y = data.iloc[:, data.columns == 'forecasted_total_principal'].values
         
         # Split data to training/test set
-        from sklearn.model_selection import train_test_split
         X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size = horizon_param, random_state = 0, shuffle = False)
         
-        # Fit Random Forest Regression to the dataset
-#        from sklearn.ensemble import RandomForestRegressor
-#        regressor = RandomForestRegressor(n_estimators = 100, random_state = 0)
-#        regressor.fit(X_train, Y_train.ravel())
-        
         # Make predictions
+        print('=========================== Horizon: %s ============================' % intermediate_horizon)
         regressor = create_regressor(regressor_param, X_train, Y_train)
         y_pred = regressor.predict(X_test)
     
