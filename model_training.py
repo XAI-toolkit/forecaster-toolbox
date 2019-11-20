@@ -267,6 +267,8 @@ def build_and_train(horizon_param, regressor_param):
 
     # Make forecasts using the Direct approach, i.e. train separate models for each forecasting horizon
     for intermediate_horizon in range (1, horizon_param+1):
+        print('=========================== Horizon: %s ============================' % intermediate_horizon)
+        
         # Add time-shifted prior and future period
         data = series_to_supervised(dataset, n_in = WINDOW_SIZE)
         
@@ -281,13 +283,26 @@ def build_and_train(horizon_param, regressor_param):
         X = data.iloc[:, data.columns != 'forecasted_total_principal'].values
         Y = data.iloc[:, data.columns == 'forecasted_total_principal'].values
         
-        # Split data to training/test set
+        #==============#
+        #  Test model  #
+        #==============#
+        # Split data to training/test set to test model
         X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size = horizon_param, random_state = 0, shuffle = False)
-        
-        # Make predictions
-        print('=========================== Horizon: %s ============================' % intermediate_horizon)
+        # Make forecasts for training/test set
         regressor = create_regressor(regressor_param, X_train, Y_train)
         y_pred = regressor.predict(X_test)
+        
+        #==============#
+        # Deploy model #
+        #==============#
+        # Define X to to deploy model for real forecasts
+        # X_real = series_to_supervised(dataset, n_in = WINDOW_SIZE, dropnan=False)
+        # X_real = X_real.drop(columns=['total_principal(t-%s)' % (i) for i in range(WINDOW_SIZE, 0, -1)]) 
+        # X_real = X_real.iloc[-1, :].values
+        # X_real = X_real.reshape(1, -1)        
+        # Make real forecasts
+        # regressor = create_regressor(regressor_param, X, Y)
+        # y_pred = regressor.predict(X_real)
     
         # Fill dataframe with forecasts
         temp_dict = {
