@@ -3,9 +3,9 @@
 @author: tsoukj
 """
 
-from model_training import build_and_train
-from flask import Flask, jsonify, request
 import json
+from flask import Flask, jsonify, request
+from model_training import build_and_train
 
 # Create the Flask app
 app = Flask(__name__)
