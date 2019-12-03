@@ -17,6 +17,8 @@ from sklearn.exceptions import ConvergenceWarning
 from pyramid.arima import auto_arima
 from utils import mean_absolute_percentage_error, root_mean_squared_error, series_to_supervised
 
+DEBUG_LOGS = True
+
 #===============================================================================
 # grid_search_best ()
 #===============================================================================
@@ -69,9 +71,10 @@ def grid_search_best(reg_type, X, Y):
     # best_accuracy = grid_search.best_score_
     best_parameters = grid_search.best_params_
     
-    print('=========================== Grid Search ===========================')
-    print(' - Regressor: ', reg_type)
-    print(' - Best Parameters: ', best_parameters)
+    if DEBUG_LOGS:
+        print('=========================== Grid Search ===========================')
+        print(' - Regressor: ', reg_type)
+        print(' - Best Parameters: ', best_parameters)
     return best_parameters
 
 #===============================================================================
@@ -90,8 +93,9 @@ def arima_search_best(Y):
     # Perform auto_arima
     stepwise_model = auto_arima(Y, trace = False, error_action = "ignore", suppress_warnings = True, stepwise = True)
     
-    print('========================== Auto ARIMA =========================')
-    print(stepwise_model.summary())
+    if DEBUG_LOGS:
+        print('============================ Auto ARIMA ===========================')
+        print(stepwise_model.summary())
     return stepwise_model
     
 #===============================================================================
@@ -124,9 +128,10 @@ def cross_validation_best(pipes, X, Y):
             best_score = scores['test_r2'].mean()
             best_regressor = pipe
     
-    print('=================== TimeSeriesSplit Validation ====================')
-    print(' - Best Regressor: ', best_regressor)
-    print(' - Best Score: ', best_score)
+    if DEBUG_LOGS:
+        print('=================== TimeSeriesSplit Validation ====================')
+        print(' - Best Regressor: ', best_regressor)
+        print(' - Best Score: ', best_score)
     return best_regressor
 
 #===============================================================================
@@ -272,7 +277,7 @@ def build_and_train(horizon_param, regressor_param):
     # Make forecasts using the Direct approach, i.e. train separate ML models for each forecasting horizon
     else:
         for intermediate_horizon in range (1, horizon_param+1):
-            print('=========================== Horizon: %s ============================' % intermediate_horizon)
+            if DEBUG_LOGS: print('=========================== Horizon: %s ============================' % intermediate_horizon)
             
             # Add time-shifted prior and future period
             data = series_to_supervised(dataset, n_in = WINDOW_SIZE)
@@ -319,7 +324,7 @@ def build_and_train(horizon_param, regressor_param):
     # Fill results dictionary with forecasts
     dict_result['forecasts'] = list_forecasts
     
-    print(dict_result)
+    if DEBUG_LOGS: print(dict_result)
     return(dict_result)
     
 #build_and_train(5, 'arima')
