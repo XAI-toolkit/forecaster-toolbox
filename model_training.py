@@ -238,12 +238,12 @@ def build_and_train(horizon_param, regressor_param):
     WINDOW_SIZE = 2
     
     # Read dataset
-    dataset = pd.read_csv('apache_kafka_measures.csv', sep = ";", usecols = METRICS_TD)
+    dataset = pd.read_csv('data/apache_kafka_measures.csv', sep = ";", usecols = METRICS_TD)
     dataset['total_principal'] = dataset['reliability_remediation_effort'] + dataset['security_remediation_effort'] + dataset['sqale_index']
     dataset = dataset.drop(columns=['sqale_index', 'reliability_remediation_effort', 'security_remediation_effort'])
     
     # Read dataset date
-    dataset_date = pd.read_csv('apache_kafka_measures.csv', sep = ";", usecols = ['date'])
+    dataset_date = pd.read_csv('data/apache_kafka_measures.csv', sep = ";", usecols = ['date'])
     
     dict_result = {}
     list_forecasts = []
@@ -327,4 +327,4 @@ def build_and_train(horizon_param, regressor_param):
     if DEBUG_LOGS: print(dict_result)
     return(dict_result)
     
-#build_and_train(5, 'arima')
+#build_and_train(5, 'lasso')
