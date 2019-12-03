@@ -12,6 +12,9 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics.scorer import make_scorer
+from sklearn.utils.testing import ignore_warnings
+from sklearn.exceptions import ConvergenceWarning
+from pyramid.arima import auto_arima
 from utils import mean_absolute_percentage_error, root_mean_squared_error, series_to_supervised
 
 #===============================================================================
@@ -35,11 +38,11 @@ def grid_search_best(reg_type, X, Y):
     scaler = StandardScaler()
     
     # Create the regressor model and parameters range
-    if reg_type == 'lasso_regression':
+    if reg_type == 'lasso':
         regressor = Lasso()
         pipeline = Pipeline([('regressor', regressor)])
         parameters = {'regressor__alpha': [1, 10, 100, 1000, 100000, 1000000, 10000000]}
-    elif reg_type == 'ridge_regression':
+    elif reg_type == 'ridge':
         regressor = Ridge()
         pipeline = Pipeline([('regressor', regressor)])
         parameters = {'regressor__alpha': [1, 10, 100, 1000, 100000, 1000000, 10000000]}
@@ -71,6 +74,26 @@ def grid_search_best(reg_type, X, Y):
     print(' - Best Parameters: ', best_parameters)
     return best_parameters
 
+#===============================================================================
+# arima_search_best ()
+#===============================================================================
+def arima_search_best(Y):
+    """
+    Perform auto_arima and return the model with best (p,d,q) parameters based 
+    on AIC score minimization.
+    Arguments:
+        Y: Values of observations as a NumPy array.
+    Returns:
+        The best model as an object.
+    """
+    
+    # Perform auto_arima
+    stepwise_model = auto_arima(Y, trace = False, error_action = "ignore", suppress_warnings = True, stepwise = True)
+    
+    print('========================== Auto ARIMA =========================')
+    print(stepwise_model.summary())
+    return stepwise_model
+    
 #===============================================================================
 # cross_validation_best ()
 #===============================================================================
@@ -109,6 +132,7 @@ def cross_validation_best(pipes, X, Y):
 #===============================================================================
 # create_regressor ()
 #===============================================================================
+@ignore_warnings(category=ConvergenceWarning)
 def create_regressor(reg_type, X, Y):   
     """
     Create and train a regressor based on given X and Y values. Regressor type
@@ -125,43 +149,54 @@ def create_regressor(reg_type, X, Y):
     scaler = StandardScaler()
         
     # Create the regressor model
-    if reg_type == 'linear_regression':
+    if reg_type == 'mlr':
         # Fitting Multiple Linear Regression to the Training set
         regressor = LinearRegression()
         pipeline = Pipeline([('regressor', regressor)])
-    elif reg_type == 'lasso_regression':
+        pipeline.fit(X, Y.ravel())
+    elif reg_type == 'lasso':
         # Fitting Lasso Regression to the Training set
-        best_parameters = grid_search_best('lasso_regression', X, Y)
+        best_parameters = grid_search_best('lasso', X, Y)
         regressor = Lasso(alpha = best_parameters['regressor__alpha'])
         pipeline = Pipeline([('regressor', regressor)])
-    elif reg_type == 'ridge_regression':
+        pipeline.fit(X, Y.ravel())
+    elif reg_type == 'ridge':
         # Fitting Ridge Regression to the Training set
-        best_parameters = grid_search_best('ridge_regression', X, Y)
+        best_parameters = grid_search_best('ridge', X, Y)
         regressor = Ridge(alpha = best_parameters['regressor__alpha'])
         pipeline = Pipeline([('regressor', regressor)])
+        pipeline.fit(X, Y.ravel())
     elif reg_type == 'svr_linear':
         # Fitting linear SVR to the dataset
         best_parameters = grid_search_best('svr_linear', X, Y)
         regressor = SVR(kernel = 'linear', C = best_parameters['regressor__C'])
         pipeline = Pipeline([('scaler', scaler), ('regressor', regressor)])
+        pipeline.fit(X, Y.ravel())
     elif reg_type == 'svr_rbf':
         # Fitting SVR to the dataset
         best_parameters = grid_search_best('svr_rbf', X, Y)
         regressor = SVR(kernel = 'rbf', gamma = best_parameters['regressor__gamma'], C = best_parameters['regressor__C'])
         pipeline = Pipeline([('scaler', scaler), ('regressor', regressor)])
+        pipeline.fit(X, Y.ravel())
     elif reg_type == 'random_forest':
         # Fitting Random Forest Regression to the dataset
         best_parameters = grid_search_best('random_forest', X, Y)
         regressor = RandomForestRegressor(n_estimators = best_parameters['regressor__n_estimators'], max_depth = best_parameters['regressor__max_depth'], random_state = 0)
         pipeline = Pipeline([('regressor', regressor)])
+        pipeline.fit(X, Y.ravel())
+    elif reg_type == 'arima':
+        # Fitting ARIMA Regression to the dataset
+        regressor = arima_search_best(Y)
+        pipeline = regressor
+        pipeline.fit(Y)
     elif reg_type == 'auto':
         # Fitting Multiple Linear Regression to the Training set
         regressor_linear = LinearRegression()
         # Fitting Lasso Regression to the Training set
-        best_parameters = grid_search_best('lasso_regression', X, Y)
+        best_parameters = grid_search_best('lasso', X, Y)
         regressor_lasso = Lasso(alpha = best_parameters['regressor__alpha'])
         # Fitting Ridge Regression to the Training set
-        best_parameters = grid_search_best('ridge_regression', X, Y)
+        best_parameters = grid_search_best('ridge', X, Y)
         regressor_ridge = Ridge(alpha = best_parameters['regressor__alpha'])
         # Fitting linear SVR to the dataset
         best_parameters = grid_search_best('svr_linear', X, Y)
@@ -175,9 +210,7 @@ def create_regressor(reg_type, X, Y):
         # Perform TimeSeriesSplit Validation and return best model
         pipes = [Pipeline([('regressor', regressor_linear)]), Pipeline([('regressor', regressor_lasso)]), Pipeline([('regressor', regressor_ridge)]), Pipeline([('scaler', scaler), ('regressor', regressor_svr_linear)]), Pipeline([('scaler', scaler), ('regressor', regressor_svr_rbf)]), Pipeline([('regressor', regressor_random_forest)])]
         pipeline = cross_validation_best(pipes, X, Y)
-    
-    # Fit selected model to the dataset
-    pipeline.fit(X, Y.ravel())
+        pipeline.fit(X, Y.ravel())
     
     return pipeline
 
@@ -200,66 +233,93 @@ def build_and_train(horizon_param, regressor_param):
     WINDOW_SIZE = 2
     
     # Read dataset
-    dataset = pd.read_csv('apache_kafka_measures.csv', sep=";", usecols = METRICS_TD)
+    dataset = pd.read_csv('apache_kafka_measures.csv', sep = ";", usecols = METRICS_TD)
     dataset['total_principal'] = dataset['reliability_remediation_effort'] + dataset['security_remediation_effort'] + dataset['sqale_index']
     dataset = dataset.drop(columns=['sqale_index', 'reliability_remediation_effort', 'security_remediation_effort'])
     
     # Read dataset date
-    dataset_date = pd.read_csv('apache_kafka_measures.csv', sep=";", usecols = ['date'])
+    dataset_date = pd.read_csv('apache_kafka_measures.csv', sep = ";", usecols = ['date'])
     
     dict_result = {}
     list_forecasts = []
-
-    # Make forecasts using the Direct approach, i.e. train separate models for each forecasting horizon
-    for intermediate_horizon in range (1, horizon_param+1):
-        print('=========================== Horizon: %s ============================' % intermediate_horizon)
-        
-        # Add time-shifted prior and future period
-        data = series_to_supervised(dataset, n_in = WINDOW_SIZE)
-        
-        # Append dependend variable column with value equal to total_principal of the target horizon's version
-        data['forecasted_total_principal'] = data['total_principal(t)'].shift(-intermediate_horizon)
-        data = data.drop(data.index[-intermediate_horizon:])
-        
-        # Remove TD as independent variable
-        data = data.drop(columns=['total_principal(t-%s)' % (i) for i in range(WINDOW_SIZE, 0, -1)]) 
-        
-        # Define independent and dependent variables
-        X = data.iloc[:, data.columns != 'forecasted_total_principal'].values
-        Y = data.iloc[:, data.columns == 'forecasted_total_principal'].values
-        
+    
+    # Make forecasts using the ARIMA model
+    if regressor_param == 'arima':
         #==============#
         #  Test model  #
         #==============#
         # Split data to training/test set to test model
-        X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size = horizon_param, random_state = 0, shuffle = False)
-        # Make forecasts for training/test set
-        regressor = create_regressor(regressor_param, X_train, Y_train)
-        y_pred = regressor.predict(X_test)
+        Y = dataset['total_principal'][0:-horizon_param]
         
         #==============#
         # Deploy model #
         #==============#
-        # Define X to to deploy model for real forecasts
-        # X_real = series_to_supervised(dataset, n_in = WINDOW_SIZE, dropnan=False)
-        # X_real = X_real.drop(columns=['total_principal(t-%s)' % (i) for i in range(WINDOW_SIZE, 0, -1)]) 
-        # X_real = X_real.iloc[-1, :].values
-        # X_real = X_real.reshape(1, -1)        
-        # Make real forecasts
-        # regressor = create_regressor(regressor_param, X, Y)
-        # y_pred = regressor.predict(X_real)
-    
+        # Set Y to to deploy model for real forecasts
+        # Y = dataset['total_principal']
+     
+        # Make forecasts for training/test set
+        regressor = create_regressor(regressor_param, None, Y)
+        y_pred = regressor.predict(n_periods = horizon_param)
+            
         # Fill dataframe with forecasts
-        temp_dict = {
-                        'x': dataset_date['date'].iloc[len(dataset_date['date'])-(horizon_param-intermediate_horizon+1)],
-                        'y': y_pred[0]
-                    }
-        list_forecasts.append(temp_dict)
+        for intermediate_horizon in range (1, horizon_param+1):
+            temp_dict = {
+                            'x': dataset_date['date'].iloc[len(dataset_date['date'])-(horizon_param-intermediate_horizon+1)],
+                            'y': y_pred[intermediate_horizon-1]
+                        }
+            list_forecasts.append(temp_dict)
+    
+    # Make forecasts using the Direct approach, i.e. train separate ML models for each forecasting horizon
+    else:
+        for intermediate_horizon in range (1, horizon_param+1):
+            print('=========================== Horizon: %s ============================' % intermediate_horizon)
+            
+            # Add time-shifted prior and future period
+            data = series_to_supervised(dataset, n_in = WINDOW_SIZE)
+            
+            # Append dependend variable column with value equal to total_principal of the target horizon's version
+            data['forecasted_total_principal'] = data['total_principal(t)'].shift(-intermediate_horizon)
+            data = data.drop(data.index[-intermediate_horizon:])
+            
+            # Remove TD as independent variable
+            data = data.drop(columns=['total_principal(t-%s)' % (i) for i in range(WINDOW_SIZE, 0, -1)]) 
+            
+            # Define independent and dependent variables
+            X = data.iloc[:, data.columns != 'forecasted_total_principal'].values
+            Y = data.iloc[:, data.columns == 'forecasted_total_principal'].values
+            
+            #==============#
+            #  Test model  #
+            #==============#
+            # Split data to training/test set to test model
+            X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size = horizon_param, random_state = 0, shuffle = False)
+            # Make forecasts for training/test set
+            regressor = create_regressor(regressor_param, X_train, Y_train)
+            y_pred = regressor.predict(X_test)
+            
+            #==============#
+            # Deploy model #
+            #==============#
+            # Define X to to deploy model for real forecasts
+            # X_real = series_to_supervised(dataset, n_in = WINDOW_SIZE, dropnan=False)
+            # X_real = X_real.drop(columns=['total_principal(t-%s)' % (i) for i in range(WINDOW_SIZE, 0, -1)]) 
+            # X_real = X_real.iloc[-1, :].values
+            # X_real = X_real.reshape(1, -1)        
+            # Make real forecasts
+            # regressor = create_regressor(regressor_param, X, Y)
+            # y_pred = regressor.predict(X_real)
         
+            # Fill dataframe with forecasts
+            temp_dict = {
+                            'x': dataset_date['date'].iloc[len(dataset_date['date'])-(horizon_param-intermediate_horizon+1)],
+                            'y': y_pred[0]
+                        }
+            list_forecasts.append(temp_dict)
+    
     # Fill results dictionary with forecasts
     dict_result['forecasts'] = list_forecasts
     
     print(dict_result)
     return(dict_result)
     
-#build_and_train(5, 'auto')
+#build_and_train(5, 'arima')
