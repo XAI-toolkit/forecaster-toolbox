@@ -12,7 +12,7 @@ app = Flask(__name__)
 
 # Routes
 @app.route('/ForecasterToolbox/TDForecasting', methods=['GET'])
-def TDForecasting(horizon=None):
+def TDForecasting(horizon = None, regressor = None, project = None):
     """API Call
 
     horizon (sent as URL query parameter) from API Call
@@ -20,11 +20,12 @@ def TDForecasting(horizon=None):
     """
     horizon_param = request.args.get("horizon") # if key doesn't exist, returns None
     regressor_param = request.args.get("regressor") # if key doesn't exist, returns None
+    project_param = request.args.get("project") # if key doesn't exist, returns None
     
-    if horizon_param is None or regressor_param is None:
+    if horizon_param is None or regressor_param is None or project_param is None:
         return(unprocessable_entity())
     else:
-        results = build_and_train(int(horizon_param), regressor_param)
+        results = build_and_train(int(horizon_param), regressor_param, project_param)
         
         message = {
                 'status': 200,
@@ -45,7 +46,7 @@ if __name__ == '__main__':
 def bad_request(error=None):
 	message = {
             'status': 400,
-            'message': 'Bad Request: ' + request.url + '--> Please check your data payload',
+            'message': 'Bad Request: ' + request.url + ' --> Please check your data payload',
 	}
 	resp = jsonify(message)
 	resp.status_code = 400
@@ -56,7 +57,7 @@ def bad_request(error=None):
 def unprocessable_entity(error=None):
 	message = {
             'status': 400,
-            'message': 'Unprocessable Entity: ' + request.url + '--> Missing or invalid parameters (required: horizon, regressor)',
+            'message': 'Unprocessable Entity: ' + request.url + ' --> Missing or invalid parameters (required: horizon, regressor, project)',
 	}
 	resp = jsonify(message)
 	resp.status_code = 400
