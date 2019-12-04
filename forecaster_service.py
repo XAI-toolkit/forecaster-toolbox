@@ -18,14 +18,14 @@ def TDForecasting(horizon = None, regressor = None, project = None):
     horizon (sent as URL query parameter) from API Call
     regressor (sent as URL query parameter) from API Call
     """
-    horizon_param = request.args.get("horizon") # if key doesn't exist, returns None
-    regressor_param = request.args.get("regressor") # if key doesn't exist, returns None
-    project_param = request.args.get("project") # if key doesn't exist, returns None
+    horizon_param = request.args.get("horizon", type = int) # if key doesn't exist, returns None
+    regressor_param = request.args.get("regressor", default = 'auto', type = str) # if key doesn't exist, returns None
+    project_param = request.args.get("project", type = str) # if key doesn't exist, returns None
     
     if horizon_param is None or regressor_param is None or project_param is None:
         return(unprocessable_entity())
     else:
-        results = build_and_train(int(horizon_param), regressor_param, project_param)
+        results = build_and_train(horizon_param, regressor_param, project_param)
         
         message = {
                 'status': 200,
