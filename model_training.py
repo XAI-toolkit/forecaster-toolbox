@@ -222,12 +222,13 @@ def create_regressor(reg_type, X, Y):
 #===============================================================================
 # build_and_train ()
 #===============================================================================
-def build_and_train(horizon_param, regressor_param):
+def build_and_train(horizon_param, regressor_param, project_param):
     """
     Build forecasting models and return forecasts for an horizon specified by the user.
     Arguments:
         horizon_param: The forecasting horizon up to which forecasts will be produced.
         regressor_param: The regressor models that will be used to produce forecasts.
+        project_param: The project for which the forecasts will be produced.
     Returns:
         A dictionary containing forecasted values for each intermediate step ahead up to the specified horizon.
     """
@@ -238,12 +239,12 @@ def build_and_train(horizon_param, regressor_param):
     WINDOW_SIZE = 2
     
     # Read dataset
-    dataset = pd.read_csv('data/apache_kafka_measures.csv', sep = ";", usecols = METRICS_TD)
+    dataset = pd.read_csv('data/%s.csv' % project_param, sep = ";", usecols = METRICS_TD)
     dataset['total_principal'] = dataset['reliability_remediation_effort'] + dataset['security_remediation_effort'] + dataset['sqale_index']
     dataset = dataset.drop(columns=['sqale_index', 'reliability_remediation_effort', 'security_remediation_effort'])
     
     # Read dataset date
-    dataset_date = pd.read_csv('data/apache_kafka_measures.csv', sep = ";", usecols = ['date'])
+    dataset_date = pd.read_csv('data/%s.csv' % project_param, sep = ";", usecols = ['date'])
     
     dict_result = {}
     list_forecasts = []
