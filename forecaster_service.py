@@ -21,11 +21,9 @@ def TDForecasting(horizon=None):
     horizon_param = request.args.get("horizon") # if key doesn't exist, returns None
     regressor_param = request.args.get("regressor") # if key doesn't exist, returns None
     
-    if horizon_param is None:
-        return(bad_request())
+    if horizon_param is None or regressor_param is None:
+        return(unprocessable_entity())
     else:
-        if regressor_param is None: regressor_param = 'auto'
-        
         results = build_and_train(int(horizon_param), regressor_param)
         
         message = {
@@ -40,14 +38,25 @@ def TDForecasting(horizon=None):
 
 # Run app in debug mode on port 5000
 if __name__ == '__main__':
-    app.run(port = 5000, debug=True)
+    app.run(port = 5000, debug = True)
 
 # Error Handling
 @app.errorhandler(400)
 def bad_request(error=None):
 	message = {
             'status': 400,
-            'message': 'Bad Request: ' + request.url + '--> Please check your data payload...',
+            'message': 'Bad Request: ' + request.url + '--> Please check your data payload',
+	}
+	resp = jsonify(message)
+	resp.status_code = 400
+
+	return(resp)
+    
+@app.errorhandler(422)
+def unprocessable_entity(error=None):
+	message = {
+            'status': 400,
+            'message': 'Unprocessable Entity: ' + request.url + '--> Missing or invalid parameters (required: horizon, regressor)',
 	}
 	resp = jsonify(message)
 	resp.status_code = 400
