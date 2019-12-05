@@ -6,11 +6,14 @@
 import argparse
 import sys
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 from model_training import build_and_train
 from waitress import serve
 
 # Create the Flask app
 app = Flask(__name__)
+# Enable CORS
+CORS(app)
 
 #===============================================================================
 # TDForecasting ()
