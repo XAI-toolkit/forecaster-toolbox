@@ -19,34 +19,36 @@ CORS(app)
 # TDForecasting ()
 #===============================================================================
 @app.route('/ForecasterToolbox/TDForecasting', methods=['GET'])
-def TDForecasting(horizon = None, regressor = None, project = None):
+def TDForecasting(horizon = None, project = None, regressor = None, ground_truth = None):
     """
     API Call to TDForecasting service
     Arguments:
-        horizon (sent as URL query parameter) from API Call
-        regressor (sent as URL query parameter) from API Call
-        project (sent as URL query parameter) from API Call
+        horizon: Required (sent as URL query parameter from API Call)
+        project: Required (sent as URL query parameter from API Call)
+        regressor: Optional (sent as URL query parameter from API Call)
+        ground_truth: Optional (sent as URL query parameter from API Call)
     Returns:
-        A JSON containing the forecasted values, status code and a message.
+        A JSON containing the forecasting results, status code and a message.
     """
     
     # Parse URL-encoded parameters
-    horizon_param = request.args.get("horizon", type = int) # if key doesn't exist, returns None
-    regressor_param = request.args.get("regressor", default = 'auto', type = str) # if key doesn't exist, returns None
-    project_param = request.args.get("project", type = str) # if key doesn't exist, returns None
+    horizon_param = request.args.get("horizon", type = int) # Required: if key doesn't exist, returns None
+    regressor_param = request.args.get("regressor", default = 'auto', type = str) # Optional: if key doesn't exist, returns auto
+    project_param = request.args.get("project", type = str) # Required: if key doesn't exist, returns None
+    ground_truth_param = request.args.get("ground_truth", default = 'no', type = str) # Optional: if key doesn't exist, returns no
     
     # If required parameters are missing from URL
-    if horizon_param is None or regressor_param is None or project_param is None:
+    if horizon_param is None or project_param is None or regressor_param is None or ground_truth_param is None:
         return(unprocessable_entity())
     else:
         # Call build_and_train() function and retrieve forecasts
-        results = build_and_train(horizon_param, regressor_param, project_param)
+        results = build_and_train(horizon_param, project_param, regressor_param, ground_truth_param)
         
         # Compose and jsonify respond
         message = {
                 'status': 200,
                 'message': 'The selected horizon is {}!'.format(horizon_param),
-                'forecast': results,
+                'results': results,
     	}
         resp = jsonify(message)
         resp.status_code = 200
@@ -70,7 +72,7 @@ def bad_request(error=None):
 def unprocessable_entity(error=None):
 	message = {
             'status': 400,
-            'message': 'Unprocessable Entity: ' + request.url + ' --> Missing or invalid parameters (required: horizon, regressor, project)',
+            'message': 'Unprocessable Entity: ' + request.url + ' --> Missing or invalid parameters. Required: horizon, project. Optional: regressor, ground_truth)',
 	}
 	resp = jsonify(message)
 	resp.status_code = 400
