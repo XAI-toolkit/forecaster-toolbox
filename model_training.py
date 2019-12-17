@@ -17,7 +17,7 @@ from sklearn.exceptions import ConvergenceWarning
 from pyramid.arima import auto_arima
 from utils import mean_absolute_percentage_error, root_mean_squared_error, series_to_supervised
 
-DEBUG_LOGS = True
+DEBUG_LOGS = False
 
 #===============================================================================
 # grid_search_best ()
@@ -35,7 +35,7 @@ def grid_search_best(reg_type, X, Y):
     """
 
     # Chosing hyperparameters based on best score during TimeSeriesSplit Validation
-    tscv = TimeSeriesSplit(n_splits=5) 
+    tscv = TimeSeriesSplit(n_splits = 5) 
     
     scaler = StandardScaler()
     
@@ -117,7 +117,7 @@ def cross_validation_best(pipes, X, Y):
     tscv = TimeSeriesSplit(n_splits=5) 
     
     # Scores that will be computed during TimeSeriesSplit Validation
-    scorer = {'neg_mean_absolute_error': 'neg_mean_absolute_error', 'neg_mean_squared_error': 'neg_mean_squared_error', 'r2': 'r2', 'mean_absolute_percentage_error': make_scorer(mean_absolute_percentage_error, greater_is_better=False), 'root_mean_squared_error': make_scorer(root_mean_squared_error, greater_is_better=False)}
+    scorer = {'neg_mean_absolute_error': 'neg_mean_absolute_error', 'neg_mean_squared_error': 'neg_mean_squared_error', 'r2': 'r2', 'mean_absolute_percentage_error': make_scorer(mean_absolute_percentage_error, greater_is_better = False), 'root_mean_squared_error': make_scorer(root_mean_squared_error, greater_is_better = False)}
         
     # Perform TimeSeriesSplit Validation and compute metrics
     best_score = float('-inf')
@@ -309,7 +309,7 @@ def build_and_train(horizon_param, project_param, regressor_param, ground_truth_
                 # Assign version counter
                 version_counter = len(dataset)+intermediate_horizon
                 # Define X to to deploy model for real forecasts
-                X_real = series_to_supervised(dataset, n_in = WINDOW_SIZE, dropnan=False)
+                X_real = series_to_supervised(dataset, n_in = WINDOW_SIZE, dropnan = False)
                 X_real = X_real.drop(columns=['total_principal(t-%s)' % (i) for i in range(WINDOW_SIZE, 0, -1)]) 
                 X_real = X_real.iloc[-1, :].values
                 X_real = X_real.reshape(1, -1)        
