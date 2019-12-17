@@ -35,7 +35,7 @@ def TDForecasting(horizon = None, project = None, regressor = None, ground_truth
     horizon_param = request.args.get("horizon", type = int) # Required: if key doesn't exist, returns None
     regressor_param = request.args.get("regressor", default = 'auto', type = str) # Optional: if key doesn't exist, returns auto
     project_param = request.args.get("project", type = str) # Required: if key doesn't exist, returns None
-    ground_truth_param = request.args.get("ground_truth", default = 'no', type = str) # Optional: if key doesn't exist, returns no
+    ground_truth_param = request.args.get("ground_truth", default = False, type = bool) # Optional: if key doesn't exist, returns no
     
     # If required parameters are missing from URL
     if horizon_param is None or project_param is None or regressor_param is None or ground_truth_param is None:
