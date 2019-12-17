@@ -19,7 +19,7 @@ CORS(app)
 # TDForecasting ()
 #===============================================================================
 @app.route('/ForecasterToolbox/TDForecasting', methods=['GET'])
-def TDForecasting(horizon = None, project = None, regressor = None, ground_truth = None):
+def TDForecasting(horizon_param = None, project_param = None, regressor_param = None, ground_truth_param = None):
     """
     API Call to TDForecasting service
     Arguments:
@@ -33,8 +33,8 @@ def TDForecasting(horizon = None, project = None, regressor = None, ground_truth
     
     # Parse URL-encoded parameters
     horizon_param = request.args.get("horizon", type = int) # Required: if key doesn't exist, returns None
-    regressor_param = request.args.get("regressor", default = 'auto', type = str) # Optional: if key doesn't exist, returns auto
     project_param = request.args.get("project", type = str) # Required: if key doesn't exist, returns None
+    regressor_param = request.args.get("regressor", default = 'auto', type = str) # Optional: if key doesn't exist, returns auto
     ground_truth_param = request.args.get("ground_truth", default = False, type = bool) # Optional: if key doesn't exist, returns no
     
     # If required parameters are missing from URL
@@ -72,7 +72,7 @@ def bad_request(error=None):
 def unprocessable_entity(error=None):
 	message = {
             'status': 400,
-            'message': 'Unprocessable Entity: ' + request.url + ' --> Missing or invalid parameters. Required: horizon, project. Optional: regressor, ground_truth)',
+            'message': 'Unprocessable Entity: ' + request.url + ' --> Missing or invalid parameters. Required: horizon, project. Optional: regressor, ground_truth',
 	}
 	resp = jsonify(message)
 	resp.status_code = 400
