@@ -222,7 +222,7 @@ def create_regressor(reg_type, X, Y):
 #===============================================================================
 # build_and_train ()
 #===============================================================================
-def build_and_train(horizon_param, project_param, regressor_param, ground_truth_param):
+def build_and_train(horizon_param, project_param, regressor_param, ground_truth_param, test_param):
     """
     Build forecasting models and return forecasts for an horizon specified by the user.
     Arguments:
@@ -230,6 +230,7 @@ def build_and_train(horizon_param, project_param, regressor_param, ground_truth_
         project_param: The project for which the forecasts will be produced.
         regressor_param: The regressor models that will be used to produce forecasts.
         ground_truth_param: If the model will return also ground truth values or not.
+        test_param: If the model will produce Train-Test or unseen forecasts 
     Returns:
         A dictionary containing forecasted values (and ground thruth values if
         ground_truth_param is set to yes) for each intermediate step ahead up 
@@ -253,17 +254,14 @@ def build_and_train(horizon_param, project_param, regressor_param, ground_truth_
     
     # Make forecasts using the ARIMA model
     if regressor_param == 'arima':
-        #==============#
-        #  Test model  #
-        #==============#
-        # Split data to training/test set to test model
-        Y = dataset['total_principal'][0:-horizon_param]
-        
-        #==============#
-        # Deploy model #
-        #==============#
-        # Set Y to to deploy model for real forecasts
-        # Y = dataset['total_principal']
+        # Test model
+        if test_param == 'yes':
+            # Split data to training/test set to test model
+            Y = dataset['total_principal'][0:-horizon_param]
+        # Deploy model
+        else:
+            # Set Y to to deploy model for real forecasts
+            Y = dataset['total_principal']
      
         # Make forecasts for training/test set
         regressor = create_regressor(regressor_param, None, Y)
@@ -297,30 +295,27 @@ def build_and_train(horizon_param, project_param, regressor_param, ground_truth_
             X = data.iloc[:, data.columns != 'forecasted_total_principal'].values
             Y = data.iloc[:, data.columns == 'forecasted_total_principal'].values
             
-            #==============#
-            #  Test model  #
-            #==============#
-            # Assign version counter
-            version_counter = len(dataset)-(horizon_param-intermediate_horizon)
-            # Split data to training/test set to test model
-            X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size = horizon_param, random_state = 0, shuffle = False)
-            # Make forecasts for training/test set
-            regressor = create_regressor(regressor_param, X_train, Y_train)
-            y_pred = regressor.predict(X_test)
-            
-            #==============#
-            # Deploy model #
-            #==============#
-            # Assign version counter
-            # version_counter = len(dataset)+intermediate_horizon
-            # Define X to to deploy model for real forecasts
-            # X_real = series_to_supervised(dataset, n_in = WINDOW_SIZE, dropnan=False)
-            # X_real = X_real.drop(columns=['total_principal(t-%s)' % (i) for i in range(WINDOW_SIZE, 0, -1)]) 
-            # X_real = X_real.iloc[-1, :].values
-            # X_real = X_real.reshape(1, -1)        
-            # Make real forecasts
-            # regressor = create_regressor(regressor_param, X, Y)
-            # y_pred = regressor.predict(X_real)
+            # Test model
+            if test_param == 'yes':
+                # Assign version counter
+                version_counter = len(dataset)-(horizon_param-intermediate_horizon)
+                # Split data to training/test set to test model
+                X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size = horizon_param, random_state = 0, shuffle = False)
+                # Make forecasts for training/test set
+                regressor = create_regressor(regressor_param, X_train, Y_train)
+                y_pred = regressor.predict(X_test)
+            # Deploy model
+            else:
+                # Assign version counter
+                version_counter = len(dataset)+intermediate_horizon
+                # Define X to to deploy model for real forecasts
+                X_real = series_to_supervised(dataset, n_in = WINDOW_SIZE, dropnan=False)
+                X_real = X_real.drop(columns=['total_principal(t-%s)' % (i) for i in range(WINDOW_SIZE, 0, -1)]) 
+                X_real = X_real.iloc[-1, :].values
+                X_real = X_real.reshape(1, -1)        
+                # Make real forecasts
+                regressor = create_regressor(regressor_param, X, Y)
+                y_pred = regressor.predict(X_real)
         
             # Fill dataframe with forecasts
             temp_dict = {
@@ -333,7 +328,7 @@ def build_and_train(horizon_param, project_param, regressor_param, ground_truth_
     dict_result['forecasts'] = list_forecasts
     
     # If the model will return also ground truth values
-    if ground_truth_param:
+    if ground_truth_param == 'yes':
         # Fill dataframe with ground thruth
         for intermediate_horizon in range (0, len(dataset['total_principal'])):
             temp_dict = {

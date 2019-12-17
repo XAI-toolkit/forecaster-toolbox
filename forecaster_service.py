@@ -19,30 +19,32 @@ CORS(app)
 # TDForecasting ()
 #===============================================================================
 @app.route('/ForecasterToolbox/TDForecasting', methods=['GET'])
-def TDForecasting(horizon_param = None, project_param = None, regressor_param = None, ground_truth_param = None):
+def TDForecasting(horizon_param = None, project_param = None, regressor_param = None, ground_truth_param = None, test_param = None):
     """
     API Call to TDForecasting service
     Arguments:
-        horizon: Required (sent as URL query parameter from API Call)
-        project: Required (sent as URL query parameter from API Call)
-        regressor: Optional (sent as URL query parameter from API Call)
-        ground_truth: Optional (sent as URL query parameter from API Call)
+        horizon_param: Required (sent as URL query parameter from API Call)
+        project_param: Required (sent as URL query parameter from API Call)
+        regressor_param: Optional (sent as URL query parameter from API Call)
+        ground_truth_param: Optional (sent as URL query parameter from API Call)
+        test_param: Optional (sent as URL query parameter from API Call)
     Returns:
         A JSON containing the forecasting results, status code and a message.
     """
     
     # Parse URL-encoded parameters
-    horizon_param = request.args.get("horizon", type = int) # Required: if key doesn't exist, returns None
-    project_param = request.args.get("project", type = str) # Required: if key doesn't exist, returns None
-    regressor_param = request.args.get("regressor", default = 'auto', type = str) # Optional: if key doesn't exist, returns auto
-    ground_truth_param = request.args.get("ground_truth", default = False, type = bool) # Optional: if key doesn't exist, returns no
-    
+    horizon_param = request.args.get('horizon', type = int) # Required: if key doesn't exist, returns None
+    project_param = request.args.get('project', type = str) # Required: if key doesn't exist, returns None
+    regressor_param = request.args.get('regressor', default = 'auto', type = str) # Optional: if key doesn't exist, returns auto
+    ground_truth_param = request.args.get('ground_truth', default = 'no', type = str) # Optional: if key doesn't exist, returns no
+    test_param = request.args.get('test', default = 'no', type = str) # Optional: if key doesn't exist, returns no
+        
     # If required parameters are missing from URL
-    if horizon_param is None or project_param is None or regressor_param is None or ground_truth_param is None:
+    if horizon_param is None or project_param is None or regressor_param is None or ground_truth_param is None or test_param is None:
         return(unprocessable_entity())
     else:
         # Call build_and_train() function and retrieve forecasts
-        results = build_and_train(horizon_param, project_param, regressor_param, ground_truth_param)
+        results = build_and_train(horizon_param, project_param, regressor_param, ground_truth_param, test_param)
         
         # Compose and jsonify respond
         message = {
@@ -72,7 +74,7 @@ def bad_request(error=None):
 def unprocessable_entity(error=None):
 	message = {
             'status': 400,
-            'message': 'Unprocessable Entity: ' + request.url + ' --> Missing or invalid parameters. Required: horizon, project. Optional: regressor, ground_truth',
+            'message': 'Unprocessable Entity: ' + request.url + ' --> Missing or invalid parameters. Required: horizon, project. Optional: regressor, ground_truth, test',
 	}
 	resp = jsonify(message)
 	resp.status_code = 400
@@ -103,7 +105,7 @@ def run_server(host, port, mode, debug_mode):
         # Run app in production mode using waitress
         serve(app, host = host, port = port)
     else:
-        print("Server mode '%s' not yet implemented" % mode)
+        print('Server mode "%s" not yet implemented' % mode)
         sys.exit(1)
     
 #===============================================================================
@@ -118,8 +120,8 @@ def create_arg_parser():
     MODES = [ 'builtin', 'waitress' ]
     
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('h', metavar = 'HOST', help = "Server HOST (e.g. 'localhost')", type = str)
-    parser.add_argument('p', metavar = 'PORT', help = "Server PORT (e.g. '5000')", type = int)
+    parser.add_argument('h', metavar = 'HOST', help = 'Server HOST (e.g. "localhost")', type = str)
+    parser.add_argument('p', metavar = 'PORT', help = 'Server PORT (e.g. "5000")', type = int)
     parser.add_argument('m', metavar='SERVER_MODE', help = ", ".join(MODES), choices = MODES, type = str)
     parser.add_argument('--debug', help = "Run builtin server in debug mode", action = 'store_true', default = False)
     
