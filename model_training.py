@@ -222,15 +222,18 @@ def create_regressor(reg_type, X, Y):
 #===============================================================================
 # build_and_train ()
 #===============================================================================
-def build_and_train(horizon_param, regressor_param, project_param):
+def build_and_train(horizon_param, project_param, regressor_param, ground_truth_param):
     """
     Build forecasting models and return forecasts for an horizon specified by the user.
     Arguments:
         horizon_param: The forecasting horizon up to which forecasts will be produced.
-        regressor_param: The regressor models that will be used to produce forecasts.
         project_param: The project for which the forecasts will be produced.
+        regressor_param: The regressor models that will be used to produce forecasts.
+        ground_truth_param: If the model will return also ground truth values or not.
     Returns:
-        A dictionary containing forecasted values for each intermediate step ahead up to the specified horizon.
+        A dictionary containing forecasted values (and ground thruth values if
+        ground_truth_param is set to yes) for each intermediate step ahead up 
+        to the specified horizon.
     """
     
     # selecting indicators that will be used as model variables
@@ -243,11 +246,10 @@ def build_and_train(horizon_param, regressor_param, project_param):
     dataset['total_principal'] = dataset['reliability_remediation_effort'] + dataset['security_remediation_effort'] + dataset['sqale_index']
     dataset = dataset.drop(columns=['sqale_index', 'reliability_remediation_effort', 'security_remediation_effort'])
     
-    # Read dataset date
-    dataset_date = pd.read_csv('data/%s.csv' % project_param, sep = ";", usecols = ['date'])
-    
+    # Initialise variables    
     dict_result = {}
     list_forecasts = []
+    list_ground_truth = []
     
     # Make forecasts using the ARIMA model
     if regressor_param == 'arima':
@@ -269,9 +271,10 @@ def build_and_train(horizon_param, regressor_param, project_param):
             
         # Fill dataframe with forecasts
         for intermediate_horizon in range (1, horizon_param+1):
+            version_counter = len(Y)+intermediate_horizon
             temp_dict = {
-                            'x': dataset_date['date'].iloc[len(dataset_date['date'])-(horizon_param-intermediate_horizon+1)],
-                            'y': y_pred[intermediate_horizon-1]
+                            'version': version_counter,
+                            'value': y_pred[intermediate_horizon-1]
                         }
             list_forecasts.append(temp_dict)
     
@@ -297,6 +300,8 @@ def build_and_train(horizon_param, regressor_param, project_param):
             #==============#
             #  Test model  #
             #==============#
+            # Assign version counter
+            version_counter = len(dataset)-(horizon_param-intermediate_horizon)
             # Split data to training/test set to test model
             X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size = horizon_param, random_state = 0, shuffle = False)
             # Make forecasts for training/test set
@@ -306,6 +311,8 @@ def build_and_train(horizon_param, regressor_param, project_param):
             #==============#
             # Deploy model #
             #==============#
+            # Assign version counter
+            # version_counter = len(dataset)+intermediate_horizon
             # Define X to to deploy model for real forecasts
             # X_real = series_to_supervised(dataset, n_in = WINDOW_SIZE, dropnan=False)
             # X_real = X_real.drop(columns=['total_principal(t-%s)' % (i) for i in range(WINDOW_SIZE, 0, -1)]) 
@@ -317,13 +324,25 @@ def build_and_train(horizon_param, regressor_param, project_param):
         
             # Fill dataframe with forecasts
             temp_dict = {
-                            'x': dataset_date['date'].iloc[len(dataset_date['date'])-(horizon_param-intermediate_horizon+1)],
-                            'y': y_pred[0]
+                            'version': version_counter,
+                            'value': y_pred[0]
                         }
             list_forecasts.append(temp_dict)
     
     # Fill results dictionary with forecasts
     dict_result['forecasts'] = list_forecasts
+    
+    # If the model will return also ground truth values
+    if ground_truth_param:
+        # Fill dataframe with ground thruth
+        for intermediate_horizon in range (0, len(dataset['total_principal'])):
+            temp_dict = {
+                            'version': intermediate_horizon + 1,
+                            'value': dataset['total_principal'][intermediate_horizon]
+                        }
+            list_ground_truth.append(temp_dict)
+        # Fill results dictionary with ground thruth
+        dict_result['ground_truth'] = list_ground_truth 
     
     if DEBUG_LOGS: print(dict_result)
     return(dict_result)
