@@ -49,7 +49,7 @@ def TDForecasting(horizon_param = None, project_param = None, regressor_param = 
         # Compose and jsonify respond
         message = {
                 'status': 200,
-                'message': 'The selected horizon is {}!'.format(horizon_param),
+                'message': 'The request was fulfilled.',
                 'results': results,
     	}
         resp = jsonify(message)
@@ -64,7 +64,7 @@ def TDForecasting(horizon_param = None, project_param = None, regressor_param = 
 def bad_request(error=None):
 	message = {
             'status': 400,
-            'message': 'Bad Request: ' + request.url + ' --> Please check your data payload',
+            'message': 'Bad Request: ' + request.url + ' --> Please check your data payload.',
 	}
 	resp = jsonify(message)
 	resp.status_code = 400
@@ -74,7 +74,7 @@ def bad_request(error=None):
 def unprocessable_entity(error=None):
 	message = {
             'status': 400,
-            'message': 'Unprocessable Entity: ' + request.url + ' --> Missing or invalid parameters. Required: horizon, project. Optional: regressor, ground_truth, test',
+            'message': 'Unprocessable Entity: ' + request.url + ' --> Missing or invalid parameters.',
 	}
 	resp = jsonify(message)
 	resp.status_code = 400
