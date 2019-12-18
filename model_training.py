@@ -248,7 +248,15 @@ def build_and_train(horizon_param, project_param, regressor_param, ground_truth_
     dataset = dataset.drop(columns=['sqale_index', 'reliability_remediation_effort', 'security_remediation_effort'])
     
     # Initialise variables    
-    dict_result = {}
+    dict_result = {
+                'parameters': {
+                    'project': project_param,
+                    'horizon': horizon_param,
+                    'regressor': regressor_param,
+                    'ground_truth': ground_truth_param,
+                    'test': test_param
+                }
+            }
     list_forecasts = []
     list_ground_truth = []
     
