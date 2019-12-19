@@ -16,7 +16,7 @@ The backend of the Forecaster Toolbox is developped as a Python-based web server
 The Forecaster Toolbox is developed to run on Unix and Windows systems with python 3.6.*  nstalled. We suggest installing python via the Anaconda distribution as it provides an easy way to create a virtual environment and install dependencies. The configuration steps needed, are described below:
 
 - Download the latest Anaconda distribution from: https://www.anaconda.com/distribution/
--Follow the installation steps described in the Anaconda documentation: https://docs.anaconda.com/anaconda/install/windows/
+- Follow the installation steps described in the Anaconda documentation: https://docs.anaconda.com/anaconda/install/windows/
 
 ## Installation
 
@@ -92,7 +92,7 @@ python forecaster_service.py 127.0.0.1 5000 waitress
 
 ## Usage
 
-###Example
+### Example
 
 Once the server is running, open your web browser and navigate to the following URL:
 
@@ -100,4 +100,4 @@ http://127.0.0.1:5000/ForecasterToolbox/TDForecasting?horizon=5&project=apache_k
 
 You will get a JSON response containing TD forecasts of a sample application (Apache Kafka) for an horizon of 5 versions ahead, using the Ridge regressor model.
 
-**TODO: More details will be added regarding API  and parameters**
+**TODO: More details will be added soon regarding Forecaster Toolbox API usage and its parameters**
