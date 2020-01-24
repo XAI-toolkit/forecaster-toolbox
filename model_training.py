@@ -43,21 +43,21 @@ def grid_search_best(reg_type, X, Y):
     if reg_type == 'lasso':
         regressor = Lasso()
         pipeline = Pipeline([('regressor', regressor)])
-        parameters = {'regressor__alpha': [1, 10, 100, 1000, 100000, 1000000, 10000000]}
+        parameters = {'regressor__alpha': [0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000, 100000, 1000000, 10000000]}
     elif reg_type == 'ridge':
         regressor = Ridge()
         pipeline = Pipeline([('regressor', regressor)])
-        parameters = {'regressor__alpha': [1, 10, 100, 1000, 100000, 1000000, 10000000]}
+        parameters = {'regressor__alpha': [0.00001, 0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000, 100000, 1000000, 10000000]}
     elif reg_type == 'svr_linear':
         # Fitting linear SVR to the dataset
         regressor = SVR(kernel = 'linear')
         pipeline = Pipeline([('scaler', scaler), ('regressor', regressor)])
-        parameters = {'regressor__C': [0.1, 1, 10, 100, 1000, 10000, 100000]}
+        parameters = {'regressor__C': [0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000]}
     elif reg_type == 'svr_rbf':
         # Fitting SVR to the dataset
         regressor = SVR(kernel = 'rbf')
         pipeline = Pipeline([('scaler', scaler), ('regressor', regressor)])
-        parameters = {'regressor__C': [0.1, 1, 10, 100, 1000, 10000, 100000], 'regressor__gamma' : [1, 0.1, 0.01, 0.001]}
+        parameters = {'regressor__C': [0.0001, 0.001, 0.01, 0.1, 1, 10, 100, 1000, 10000, 100000], 'regressor__gamma' : [1, 0.1, 0.01, 0.001]}
     elif reg_type == 'random_forest':
         # Fitting Random Forest Regression to the dataset
         regressor = RandomForestRegressor()
