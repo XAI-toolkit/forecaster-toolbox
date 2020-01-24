@@ -220,9 +220,9 @@ def create_regressor(reg_type, X, Y):
     return pipeline
 
 #===============================================================================
-# build_and_train ()
+# build_and_train_td ()
 #===============================================================================
-def build_and_train(horizon_param, project_param, regressor_param, ground_truth_param, test_param):
+def build_and_train_td(horizon_param, project_param, regressor_param, ground_truth_param, test_param):
     """
     Build forecasting models and return forecasts for an horizon specified by the user.
     Arguments:
@@ -350,4 +350,132 @@ def build_and_train(horizon_param, project_param, regressor_param, ground_truth_
     if DEBUG_LOGS: print(dict_result)
     return(dict_result)
     
-#build_and_train(5, 'lasso')
+#===============================================================================
+# build_and_train_dependability ()
+#===============================================================================
+def build_and_train_dependability(horizon_param, project_param, regressor_param, ground_truth_param, test_param):
+    """
+    Build forecasting models and return forecasts for an horizon specified by the user.
+    Arguments:
+        horizon_param: The forecasting horizon up to which forecasts will be produced.
+        project_param: The project for which the forecasts will be produced.
+        regressor_param: The regressor models that will be used to produce forecasts.
+        ground_truth_param: If the model will return also ground truth values or not.
+        test_param: If the model will produce Train-Test or unseen forecasts 
+    Returns:
+        A dictionary containing forecasted values (and ground thruth values if
+        ground_truth_param is set to yes) for each intermediate step ahead up 
+        to the specified horizon.
+    """
+    
+    # selecting indicators that will be used as model variables
+    METRICS_DEPENDABILITY = ['Resource_Handling', 'Assignment', 'Exception_Handling', 'Misused_Functionality', 'Security_Index']
+    # Select sliding window length
+    WINDOW_SIZE = 2
+    
+    # Read dataset
+    dataset = pd.read_csv('data/%s.csv' % project_param, sep = ";", usecols = METRICS_DEPENDABILITY)
+    
+    # Initialise variables    
+    dict_result = {
+                'parameters': {
+                    'project': project_param,
+                    'horizon': horizon_param,
+                    'regressor': regressor_param,
+                    'ground_truth': ground_truth_param,
+                    'test': test_param
+                }
+            }
+    list_forecasts = []
+    list_ground_truth = []
+    
+    # Make forecasts using the ARIMA model
+    if regressor_param == 'arima':
+        # Test model
+        if test_param == 'yes':
+            # Split data to training/test set to test model
+            Y = dataset['Security_Index'][0:-horizon_param]
+        # Deploy model
+        else:
+            # Set Y to to deploy model for real forecasts
+            Y = dataset['Security_Index']
+     
+        # Make forecasts for training/test set
+        regressor = create_regressor(regressor_param, None, Y)
+        y_pred = regressor.predict(n_periods = horizon_param)
+            
+        # Fill dataframe with forecasts
+        for intermediate_horizon in range (1, horizon_param+1):
+            version_counter = len(Y)+intermediate_horizon
+            temp_dict = {
+                            'version': version_counter,
+                            'value': y_pred[intermediate_horizon-1]
+                        }
+            list_forecasts.append(temp_dict)
+    
+    # Make forecasts using the Direct approach, i.e. train separate ML models for each forecasting horizon
+    else:
+        for intermediate_horizon in range (1, horizon_param+1):
+            if DEBUG_LOGS: print('=========================== Horizon: %s ============================' % intermediate_horizon)
+            
+            # Add time-shifted prior and future period
+            data = series_to_supervised(dataset, n_in = WINDOW_SIZE)
+            
+            # Append dependend variable column with value equal to Security_Index of the target horizon's version
+            data['forecasted_Security_Index'] = data['Security_Index(t)'].shift(-intermediate_horizon)
+            data = data.drop(data.index[-intermediate_horizon:])
+            
+            # Remove Security_Index as independent variable
+            data = data.drop(columns=['Security_Index(t-%s)' % (i) for i in range(WINDOW_SIZE, 0, -1)]) 
+            
+            # Define independent and dependent variables
+            X = data.iloc[:, data.columns != 'forecasted_Security_Index'].values
+            Y = data.iloc[:, data.columns == 'forecasted_Security_Index'].values
+            
+            # Test model
+            if test_param == 'yes':
+                # Assign version counter
+                version_counter = len(dataset)-(horizon_param-intermediate_horizon)
+                # Split data to training/test set to test model
+                X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size = horizon_param, random_state = 0, shuffle = False)
+                # Make forecasts for training/test set
+                regressor = create_regressor(regressor_param, X_train, Y_train)
+                y_pred = regressor.predict(X_test)
+            # Deploy model
+            else:
+                # Assign version counter
+                version_counter = len(dataset)+intermediate_horizon
+                # Define X to to deploy model for real forecasts
+                X_real = series_to_supervised(dataset, n_in = WINDOW_SIZE, dropnan = False)
+                X_real = X_real.drop(columns=['Security_Index(t-%s)' % (i) for i in range(WINDOW_SIZE, 0, -1)]) 
+                X_real = X_real.iloc[-1, :].values
+                X_real = X_real.reshape(1, -1)        
+                # Make real forecasts
+                regressor = create_regressor(regressor_param, X, Y)
+                y_pred = regressor.predict(X_real)
+        
+            # Fill dataframe with forecasts
+            temp_dict = {
+                            'version': version_counter,
+                            'value': y_pred[0]
+                        }
+            list_forecasts.append(temp_dict)
+    
+    # Fill results dictionary with forecasts
+    dict_result['forecasts'] = list_forecasts
+    
+    # If the model will return also ground truth values
+    if ground_truth_param == 'yes':
+        # Fill dataframe with ground thruth
+        for intermediate_horizon in range (0, len(dataset['Security_Index'])):
+            temp_dict = {
+                            'version': intermediate_horizon + 1,
+                            'value': dataset['Security_Index'][intermediate_horizon]
+                        }
+            list_ground_truth.append(temp_dict)
+        # Fill results dictionary with ground thruth
+        dict_result['ground_truth'] = list_ground_truth 
+    
+    if DEBUG_LOGS: print(dict_result)
+    return(dict_result)
+    
