@@ -7,7 +7,7 @@ import argparse
 import sys
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from model_training import build_and_train_td, build_and_train_dependability
+from model_training import build_and_train_td, build_and_train_dependability, build_and_train_energy
 from waitress import serve
 
 # Create the Flask app
@@ -87,6 +87,48 @@ def DependabilityForecasting(horizon_param = None, project_param = None, regress
     else:
         # Call build_and_train() function and retrieve forecasts
         results = build_and_train_dependability(horizon_param, project_param, regressor_param, ground_truth_param, test_param)
+        
+        # Compose and jsonify respond
+        message = {
+                'status': 200,
+                'message': 'The request was fulfilled.',
+                'results': results,
+    	}
+        resp = jsonify(message)
+        resp.status_code = 200
+        
+        return(resp)
+        
+#===============================================================================
+# EnergyForecasting ()
+#===============================================================================
+@app.route('/ForecasterToolbox/EnergyForecasting', methods=['GET'])
+def EnergyForecasting(horizon_param = None, project_param = None, regressor_param = None, ground_truth_param = None, test_param = None):
+    """
+    API Call to EnergyForecasting service
+    Arguments:
+        horizon_param: Required (sent as URL query parameter from API Call)
+        project_param: Required (sent as URL query parameter from API Call)
+        regressor_param: Optional (sent as URL query parameter from API Call)
+        ground_truth_param: Optional (sent as URL query parameter from API Call)
+        test_param: Optional (sent as URL query parameter from API Call)
+    Returns:
+        A JSON containing the forecasting results, status code and a message.
+    """
+    
+    # Parse URL-encoded parameters
+    horizon_param = request.args.get('horizon', type = int) # Required: if key doesn't exist, returns None
+    project_param = request.args.get('project', type = str) # Required: if key doesn't exist, returns None
+    regressor_param = request.args.get('regressor', default = 'auto', type = str) # Optional: if key doesn't exist, returns auto
+    ground_truth_param = request.args.get('ground_truth', default = 'no', type = str) # Optional: if key doesn't exist, returns no
+    test_param = request.args.get('test', default = 'no', type = str) # Optional: if key doesn't exist, returns no
+        
+    # If required parameters are missing from URL
+    if horizon_param is None or project_param is None or regressor_param is None or ground_truth_param is None or test_param is None:
+        return(unprocessable_entity())
+    else:
+        # Call build_and_train() function and retrieve forecasts
+        results = build_and_train_energy(horizon_param, project_param, regressor_param, ground_truth_param, test_param)
         
         # Compose and jsonify respond
         message = {
