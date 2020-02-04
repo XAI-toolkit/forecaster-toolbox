@@ -46,11 +46,12 @@ conda install -c saravji pmdarima
 You can run the server in various modes using the `forecaster_service.py` script:
 
 ```
-usage: forecaster_service.py [-h] [--debug] HOST PORT SERVER_MODE
+usage: forecaster_service.py [-h] [--debug] HOST PORT DBNAME SERVER_MODE
 
 positional arguments:
   HOST         Server HOST (e.g. "localhost")
   PORT         Server PORT (e.g. "5000")
+  DBNAME       Database name
   SERVER_MODE  builtin, waitress
 
 optional arguments:
@@ -58,7 +59,7 @@ optional arguments:
   --debug      Run builtin server in debug mode (default: False)
 ```
 
-You can change the HOST, PORT and SERVER_MODE according to your needs.
+You can change the HOST, PORT, DBNAME and SERVER_MODE according to your needs.
 
 Built-in Flask server:
 
@@ -77,7 +78,7 @@ Client <----------------> Waitress <---> Flask
 ### Run built-in server
 
 ```bash
-python forecaster_service.py 127.0.0.1 5000 builtin --debug
+python forecaster_service.py 127.0.0.1 5000 forecasting_toolbox builtin --debug
 ```
 
 This mode is useful for development since it has debugging enabled (e.g. in case of error the client gets a full stack trace).
@@ -87,7 +88,7 @@ This mode is useful for development since it has debugging enabled (e.g. in case
 ### Run server using Waitress
 
 ```bash
-python forecaster_service.py 127.0.0.1 5000 waitress
+python forecaster_service.py 127.0.0.1 5000 forecasting_toolbox waitress
 ```
 
 ## Usage
