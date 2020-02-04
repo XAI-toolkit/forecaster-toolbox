@@ -5,9 +5,11 @@
 
 import argparse
 import sys
+import os
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from model_training import build_and_train_td, build_and_train_dependability, build_and_train_energy
+from utils import import_to_database, objectid_to_string
 from waitress import serve
 
 # Create the Flask app
@@ -45,6 +47,10 @@ def TDForecasting(horizon_param = None, project_param = None, regressor_param = 
     else:
         # Call build_and_train() function and retrieve forecasts
         results = build_and_train_td(horizon_param, project_param, regressor_param, ground_truth_param, test_param)
+        
+        # Add to database
+        import_to_database(results, 'td_forecasts')
+        results = objectid_to_string(results)
         
         # Compose and jsonify respond
         message = {
@@ -88,6 +94,10 @@ def DependabilityForecasting(horizon_param = None, project_param = None, regress
         # Call build_and_train() function and retrieve forecasts
         results = build_and_train_dependability(horizon_param, project_param, regressor_param, ground_truth_param, test_param)
         
+        # Add to database
+        import_to_database(results, 'dependability_forecasts')
+        results = objectid_to_string(results)
+        
         # Compose and jsonify respond
         message = {
                 'status': 200,
@@ -130,6 +140,10 @@ def EnergyForecasting(horizon_param = None, project_param = None, regressor_para
         # Call build_and_train() function and retrieve forecasts
         results = build_and_train_energy(horizon_param, project_param, regressor_param, ground_truth_param, test_param)
         
+        # Add to database
+        import_to_database(results, 'energy_forecasts')
+        results = objectid_to_string(results)
+        
         # Compose and jsonify respond
         message = {
                 'status': 200,
@@ -168,20 +182,30 @@ def unprocessable_entity(error=None):
 #===============================================================================
 # run_server ()
 #===============================================================================
-def run_server(host, port, mode, debug_mode):
+def run_server(host, port, dbname, mode, debug_mode):
     """
     Executes the command to start the server
     Arguments:
         host: retrieved from create_arg_parser() as a string
         port: retrieved from create_arg_parser() as a int
+        dbname: retrieved from create_arg_parser() as a string
         mode: retrieved from create_arg_parser() as a string
         debug_mode: retrieved from create_arg_parser() as a bool
     """
     
     print('server:      %s:%s' % (host, port))
     print('mode:        %s' % (mode))
+    print('dbname:      %s' % (dbname))
     print('debug_mode:  %s' % (debug_mode))
-
+    
+    # Store settings in environment variables
+    if debug_mode:
+        print(" *** Debug enabled! ***")
+        os.environ['DEBUG'] = 'True'
+    os.environ['MONGO_DBNAME'] = dbname
+    os.environ['MONGO_HOST'] = 'localhost'
+    os.environ['MONGO_PORT'] = '27017'
+    
     if mode == 'builtin':
         # Run app in debug mode using flask
         app.run(host, port, debug_mode)
@@ -206,6 +230,7 @@ def create_arg_parser():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('h', metavar = 'HOST', help = 'Server HOST (e.g. "localhost")', type = str)
     parser.add_argument('p', metavar = 'PORT', help = 'Server PORT (e.g. "5000")', type = int)
+    parser.add_argument('d', metavar = 'DBNAME', help = "Database name", type = str)
     parser.add_argument('m', metavar='SERVER_MODE', help = ", ".join(MODES), choices = MODES, type = str)
     parser.add_argument('--debug', help = "Run builtin server in debug mode", action = 'store_true', default = False)
     
@@ -229,11 +254,12 @@ def main():
     args = parser.parse_args()
     host = args.h
     port = args.p
+    dbname = args.d
     mode = args.m
     debug_mode = args.debug
     
     # Run server with user-given arguments
-    run_server(host, port, mode, debug_mode)
+    run_server(host, port, dbname, mode, debug_mode)
     
 if __name__ == '__main__':
     main()
