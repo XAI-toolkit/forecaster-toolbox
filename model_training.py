@@ -5,6 +5,7 @@
 
 import numpy as np
 import pandas as pd
+import os
 from sklearn.model_selection import GridSearchCV, TimeSeriesSplit, cross_validate, train_test_split
 from sklearn.linear_model import LinearRegression, Lasso, Ridge
 from sklearn.svm import SVR
@@ -17,7 +18,7 @@ from sklearn.exceptions import ConvergenceWarning
 from pyramid.arima import auto_arima
 from utils import mean_absolute_percentage_error, root_mean_squared_error, series_to_supervised
 
-DEBUG_LOGS = False
+DEBUG = bool(os.environ.get('DEBUG', False))
 
 #===============================================================================
 # grid_search_best ()
@@ -71,7 +72,7 @@ def grid_search_best(reg_type, X, Y):
     # best_accuracy = grid_search.best_score_
     best_parameters = grid_search.best_params_
     
-    if DEBUG_LOGS:
+    if DEBUG:
         print('=========================== Grid Search ===========================')
         print(' - Regressor: ', reg_type)
         print(' - Best Parameters: ', best_parameters)
@@ -93,7 +94,7 @@ def arima_search_best(Y):
     # Perform auto_arima
     stepwise_model = auto_arima(Y, trace = False, error_action = "ignore", suppress_warnings = True, stepwise = True)
     
-    if DEBUG_LOGS:
+    if DEBUG:
         print('============================ Auto ARIMA ===========================')
         print(stepwise_model.summary())
     return stepwise_model
@@ -128,7 +129,7 @@ def cross_validation_best(pipes, X, Y):
             best_score = scores['test_r2'].mean()
             best_regressor = pipe
     
-    if DEBUG_LOGS:
+    if DEBUG:
         print('=================== TimeSeriesSplit Validation ====================')
         print(' - Best Regressor: ', best_regressor)
         print(' - Best Score: ', best_score)
@@ -287,7 +288,7 @@ def build_and_train_td(horizon_param, project_param, regressor_param, ground_tru
     # Make forecasts using the Direct approach, i.e. train separate ML models for each forecasting horizon
     else:
         for intermediate_horizon in range (1, horizon_param+1):
-            if DEBUG_LOGS: print('=========================== Horizon: %s ============================' % intermediate_horizon)
+            if DEBUG: print('=========================== Horizon: %s ============================' % intermediate_horizon)
             
             # Add time-shifted prior and future period
             data = series_to_supervised(dataset, n_in = WINDOW_SIZE)
@@ -347,7 +348,7 @@ def build_and_train_td(horizon_param, project_param, regressor_param, ground_tru
         # Fill results dictionary with ground thruth
         dict_result['ground_truth'] = list_ground_truth 
     
-    if DEBUG_LOGS: print(dict_result)
+    if DEBUG: print(dict_result)
     return(dict_result)
     
 #===============================================================================
@@ -416,7 +417,7 @@ def build_and_train_dependability(horizon_param, project_param, regressor_param,
     # Make forecasts using the Direct approach, i.e. train separate ML models for each forecasting horizon
     else:
         for intermediate_horizon in range (1, horizon_param+1):
-            if DEBUG_LOGS: print('=========================== Horizon: %s ============================' % intermediate_horizon)
+            if DEBUG: print('=========================== Horizon: %s ============================' % intermediate_horizon)
             
             # Add time-shifted prior and future period
             data = series_to_supervised(dataset, n_in = WINDOW_SIZE)
@@ -476,7 +477,7 @@ def build_and_train_dependability(horizon_param, project_param, regressor_param,
         # Fill results dictionary with ground thruth
         dict_result['ground_truth'] = list_ground_truth 
     
-    if DEBUG_LOGS: print(dict_result)
+    if DEBUG: print(dict_result)
     return(dict_result)
 
 #===============================================================================
@@ -545,7 +546,7 @@ def build_and_train_energy(horizon_param, project_param, regressor_param, ground
     # Make forecasts using the Direct approach, i.e. train separate ML models for each forecasting horizon
     else:
         for intermediate_horizon in range (1, horizon_param+1):
-            if DEBUG_LOGS: print('=========================== Horizon: %s ============================' % intermediate_horizon)
+            if DEBUG: print('=========================== Horizon: %s ============================' % intermediate_horizon)
             
             # Add time-shifted prior and future period
             data = series_to_supervised(dataset, n_in = WINDOW_SIZE)
@@ -605,5 +606,5 @@ def build_and_train_energy(horizon_param, project_param, regressor_param, ground
         # Fill results dictionary with ground thruth
         dict_result['ground_truth'] = list_ground_truth 
     
-    if DEBUG_LOGS: print(dict_result)
+    if DEBUG: print(dict_result)
     return(dict_result)
