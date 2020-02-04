@@ -5,8 +5,11 @@
 
 import numpy as np
 import pandas as pd
+import os
+import pymongo
 from math import sqrt
 from sklearn.metrics import mean_squared_error
+from bson import ObjectId
 
 #===============================================================================
 # mean_absolute_percentage_error ()
@@ -82,3 +85,47 @@ def series_to_supervised(dataset, n_in=1, n_out=1, dropnan=True):
         agg.dropna(inplace=True)
     
     return agg
+
+#===============================================================================
+# objectid_to_string ()
+#===============================================================================
+def objectid_to_string(dict_obj):
+    """
+    Convert all fields of dict that are ObjectIds to str.
+    Arguments:
+        dict_obj: A dict object.
+    Returns:
+        A dict object with Pymongo ObjectId as string.
+    """
+    
+    for key in dict_obj:
+        if isinstance(dict_obj[key], ObjectId):
+            dict_obj[key] = str(dict_obj[key])
+    
+    return dict_obj
+
+#===============================================================================
+# import_to_database ()
+#===============================================================================
+def import_to_database(dict_obj, collection_name):
+    """
+    Insert a dict object into a Mongo database collection.
+    Arguments:
+        dict_obj: The dict object to be inserted into the database.
+        collection_name: The name of the collection of the Mongo database.
+    Returns:
+        A field insertedId with the _id value of the inserted document.
+    """
+    
+    # Read settings from environment variables
+    MONGO_HOST = os.environ.get('MONGO_HOST', 'localhost')
+    MONGO_PORT = int(os.environ.get('MONGO_PORT', 27017))
+    DB_NAME = os.environ.get('MONGO_DBNAME', 'forecasting_toolbox')
+    
+    client = pymongo.MongoClient(MONGO_HOST, MONGO_PORT)
+    db = client[DB_NAME]
+    forecasts_collection = db[collection_name]
+    
+    result = forecasts_collection.insert_one(dict_obj)
+    
+    return result
