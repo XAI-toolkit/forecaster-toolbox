@@ -11,6 +11,8 @@ from math import sqrt
 from sklearn.metrics import mean_squared_error
 from bson import ObjectId
 
+DEBUG = bool(os.environ.get('DEBUG', False))
+
 #===============================================================================
 # mean_absolute_percentage_error ()
 #===============================================================================
@@ -126,6 +128,10 @@ def import_to_database(dict_obj, collection_name):
     db = client[DB_NAME]
     forecasts_collection = db[collection_name]
     
-    result = forecasts_collection.insert_one(dict_obj)
+    try:
+        result = forecasts_collection.insert_one(dict_obj)
+    except Exception as e:
+        result = e
+    if DEBUG: print(result)
     
     return result
