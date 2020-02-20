@@ -16,7 +16,7 @@ from sklearn.metrics.scorer import make_scorer
 from sklearn.utils.testing import ignore_warnings
 from sklearn.exceptions import ConvergenceWarning
 from pyramid.arima import auto_arima
-from utils import mean_absolute_percentage_error, root_mean_squared_error, series_to_supervised
+from utils import mean_absolute_percentage_error, root_mean_squared_error, series_to_supervised, read_from_database
 
 DEBUG = bool(os.environ.get('DEBUG', False))
 
@@ -245,6 +245,7 @@ def build_and_train_td(horizon_param, project_param, regressor_param, ground_tru
     
     # Read dataset
     dataset = pd.read_csv('data/%s.csv' % project_param, sep = ";", usecols = METRICS_TD)
+    # dataset = read_from_database('td_dummy', 'localhost', 27017, project_param, {'_id': 0, 'bugs': 1, 'vulnerabilities': 1, 'code_smells': 1, 'sqale_index': 1, 'reliability_remediation_effort': 1, 'security_remediation_effort': 1})
     dataset['total_principal'] = dataset['reliability_remediation_effort'] + dataset['security_remediation_effort'] + dataset['sqale_index']
     dataset = dataset.drop(columns=['sqale_index', 'reliability_remediation_effort', 'security_remediation_effort'])
     
@@ -376,6 +377,7 @@ def build_and_train_dependability(horizon_param, project_param, regressor_param,
     
     # Read dataset
     dataset = pd.read_csv('data/%s.csv' % project_param, sep = ";", usecols = METRICS_DEPENDABILITY)
+    # dataset = read_from_database('dependability_dummy', 'localhost', 27017, project_param, {'_id': 0, 'Resource_Handling': 1, 'Assignment': 1, 'Exception_Handling': 1, 'Misused_Functionality': 1, 'Security_Index': 1})
     
     # Initialise variables    
     dict_result = {
@@ -505,6 +507,7 @@ def build_and_train_energy(horizon_param, project_param, regressor_param, ground
     
     # Read dataset
     dataset = pd.read_csv('data/%s.csv' % project_param, sep = ";", usecols = METRICS_ENERGY)
+    # dataset = read_from_database('energy_dummy', 'localhost', 27017, project_param, {'_id': 0, 'cpu_cycles': 1, 'cache_references': 1, 'energy_CPU(J)': 1})
     
     # Initialise variables    
     dict_result = {
