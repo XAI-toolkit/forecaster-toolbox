@@ -124,7 +124,7 @@ def import_to_database(dict_obj, collection_name):
     MONGO_PORT = int(os.environ.get('MONGO_PORT', 27017))
     DB_NAME = os.environ.get('MONGO_DBNAME', 'forecasting_toolbox')
     
-    client = pymongo.MongoClient(MONGO_HOST, MONGO_PORT)
+    client = pymongo.MongoClient(MONGO_HOST, MONGO_PORT, serverSelectionTimeoutMS = 2000)
     db = client[DB_NAME]
     forecasts_collection = db[collection_name]
     
@@ -157,7 +157,7 @@ def read_from_database(db_name, db_url, db_port, collection_name, fields):
     MONGO_PORT = db_port
     DB_NAME = db_name
     
-    client = pymongo.MongoClient(MONGO_HOST, MONGO_PORT)
+    client = pymongo.MongoClient(MONGO_HOST, MONGO_PORT, serverSelectionTimeoutMS = 2000)
     db = client[DB_NAME]
     collection = db[collection_name]
     
