@@ -135,3 +135,36 @@ def import_to_database(dict_obj, collection_name):
     if DEBUG: print(result)
     
     return result
+
+#===============================================================================
+# read_from_database ()
+#===============================================================================
+def read_from_database(db_name, db_url, db_port, collection_name, fields):
+    """
+    Read fields from a specific Mongo database collection and convert them to dataframe.
+    Arguments:
+        db_name: The name of the Mongo database.
+        db_url: The URL of the Mongo database.
+        db_port: The URL port of the Mongo database.
+        collection_name: The name of the collection of the Mongo database.
+        fields: The fields of the collection of the Mongo database in a form of {'_id': 0, 'field1': 1, 'field2': 1, ...}.
+    Returns:
+        A dataframe with the fields recovered from the Mongo database.
+    """
+    
+    # Read settings from environment variables
+    MONGO_HOST = db_url
+    MONGO_PORT = db_port
+    DB_NAME = db_name
+    
+    client = pymongo.MongoClient(MONGO_HOST, MONGO_PORT)
+    db = client[DB_NAME]
+    collection = db[collection_name]
+    
+    try:
+        result = result = pd.DataFrame(list(collection.find({}, fields)))
+    except Exception as e:
+        result = e
+    if DEBUG: print(result)
+    
+    return result
