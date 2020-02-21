@@ -34,7 +34,7 @@ conda activate forecaster_toolbox
 
 - Install the needed libraries by running:
 ```bash
-conda install -c anaconda waitress flask numpy pandas scikit-learn
+conda install -c anaconda numpy pandas scikit-learn waitress flask flask-cors pymongo
 ```
 and
 ```bash
