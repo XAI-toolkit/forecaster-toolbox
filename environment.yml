@@ -1,0 +1,15 @@
+name: forecaster_toolbox
+channels:
+  - saravji
+  - anaconda
+  - defaults
+dependencies:
+  - python=3.6.4
+  - flask
+  - flask-cors
+  - numpy
+  - pandas
+  - pmdarima
+  - pymongo
+  - scikit-learn
+  - waitress
