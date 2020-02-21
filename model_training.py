@@ -12,10 +12,10 @@ from sklearn.svm import SVR
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics.scorer import make_scorer
+from sklearn.metrics import make_scorer
 from sklearn.utils.testing import ignore_warnings
 from sklearn.exceptions import ConvergenceWarning
-from pyramid.arima import auto_arima
+from pmdarima import auto_arima
 from utils import mean_absolute_percentage_error, root_mean_squared_error, series_to_supervised, read_from_database
 
 DEBUG = bool(os.environ.get('DEBUG', False))
@@ -92,8 +92,12 @@ def arima_search_best(Y):
     """
     
     # Perform auto_arima
-    stepwise_model = auto_arima(Y, trace = False, error_action = "ignore", suppress_warnings = True, stepwise = True)
-    
+    try:
+        stepwise_model = auto_arima(Y, start_p=1, start_q=1, max_p=5, max_q=5, m=52, trace = False, error_action = 'ignore', suppress_warnings = True, stepwise = True)
+    except Exception as e:
+        if DEBUG: print(e)
+        stepwise_model = auto_arima(Y, start_p=1, start_q=1, max_p=5, max_q=5, m=12, trace = False, error_action = 'ignore', suppress_warnings = True, stepwise = True)
+        
     if DEBUG:
         print('============================ Auto ARIMA ===========================')
         print(stepwise_model.summary())
