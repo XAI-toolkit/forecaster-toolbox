@@ -286,7 +286,7 @@ def build_and_train_td(horizon_param, project_param, regressor_param, ground_tru
             version_counter = len(Y)+intermediate_horizon
             temp_dict = {
                             'version': version_counter,
-                            'value': y_pred[intermediate_horizon-1]
+                            'value': float(y_pred[intermediate_horizon-1])
                         }
             list_forecasts.append(temp_dict)
     
@@ -334,7 +334,7 @@ def build_and_train_td(horizon_param, project_param, regressor_param, ground_tru
             # Fill dataframe with forecasts
             temp_dict = {
                             'version': version_counter,
-                            'value': y_pred[0]
+                            'value': float(y_pred[0])
                         }
             list_forecasts.append(temp_dict)
     
@@ -347,7 +347,7 @@ def build_and_train_td(horizon_param, project_param, regressor_param, ground_tru
         for intermediate_horizon in range (0, len(dataset['total_principal'])):
             temp_dict = {
                             'version': intermediate_horizon + 1,
-                            'value': dataset['total_principal'][intermediate_horizon]
+                            'value': float(dataset['total_principal'][intermediate_horizon])
                         }
             list_ground_truth.append(temp_dict)
         # Fill results dictionary with ground thruth
@@ -416,7 +416,7 @@ def build_and_train_dependability(horizon_param, project_param, regressor_param,
             version_counter = len(Y)+intermediate_horizon
             temp_dict = {
                             'version': version_counter,
-                            'value': y_pred[intermediate_horizon-1]
+                            'value': float(y_pred[intermediate_horizon-1])
                         }
             list_forecasts.append(temp_dict)
     
@@ -464,7 +464,7 @@ def build_and_train_dependability(horizon_param, project_param, regressor_param,
             # Fill dataframe with forecasts
             temp_dict = {
                             'version': version_counter,
-                            'value': y_pred[0]
+                            'value': float(y_pred[0])
                         }
             list_forecasts.append(temp_dict)
     
@@ -477,7 +477,7 @@ def build_and_train_dependability(horizon_param, project_param, regressor_param,
         for intermediate_horizon in range (0, len(dataset['Security_Index'])):
             temp_dict = {
                             'version': intermediate_horizon + 1,
-                            'value': dataset['Security_Index'][intermediate_horizon]
+                            'value': float(dataset['Security_Index'][intermediate_horizon])
                         }
             list_ground_truth.append(temp_dict)
         # Fill results dictionary with ground thruth
@@ -546,7 +546,7 @@ def build_and_train_energy(horizon_param, project_param, regressor_param, ground
             version_counter = len(Y)+intermediate_horizon
             temp_dict = {
                             'version': version_counter,
-                            'value': y_pred[intermediate_horizon-1]
+                            'value': float(y_pred[intermediate_horizon-1])
                         }
             list_forecasts.append(temp_dict)
     
@@ -594,7 +594,7 @@ def build_and_train_energy(horizon_param, project_param, regressor_param, ground
             # Fill dataframe with forecasts
             temp_dict = {
                             'version': version_counter,
-                            'value': y_pred[0]
+                            'value': float(y_pred[0])
                         }
             list_forecasts.append(temp_dict)
     
@@ -607,7 +607,7 @@ def build_and_train_energy(horizon_param, project_param, regressor_param, ground
         for intermediate_horizon in range (0, len(dataset['energy_CPU(J)'])):
             temp_dict = {
                             'version': intermediate_horizon + 1,
-                            'value': dataset['energy_CPU(J)'][intermediate_horizon]
+                            'value': float(dataset['energy_CPU(J)'][intermediate_horizon])
                         }
             list_ground_truth.append(temp_dict)
         # Fill results dictionary with ground thruth
