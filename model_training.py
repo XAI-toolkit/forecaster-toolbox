@@ -36,8 +36,8 @@ def grid_search_best(reg_type, X, Y):
     """
 
     # Chosing hyperparameters based on best score during TimeSeriesSplit Validation
-    tscv = TimeSeriesSplit(n_splits = 5) 
-    
+    splits = int(len(X) / 30) if len(X) >= 60 else 2
+    tscv = TimeSeriesSplit(n_splits = splits) 
     scaler = StandardScaler()
     
     # Create the regressor model and parameters range
@@ -119,7 +119,8 @@ def cross_validation_best(pipes, X, Y):
     """
 
     # Chosing regressor based on best score during TimeSeriesSplit Validation
-    tscv = TimeSeriesSplit(n_splits=5) 
+    splits = int(len(X) / 30) if len(X) >= 60 else 2
+    tscv = TimeSeriesSplit(n_splits = splits) 
     
     # Scores that will be computed during TimeSeriesSplit Validation
     scorer = {'neg_mean_absolute_error': 'neg_mean_absolute_error', 'neg_mean_squared_error': 'neg_mean_squared_error', 'r2': 'r2', 'mean_absolute_percentage_error': make_scorer(mean_absolute_percentage_error, greater_is_better = False), 'root_mean_squared_error': make_scorer(root_mean_squared_error, greater_is_better = False)}
