@@ -1,4 +1,4 @@
-# Forecaster Toolbox
+# Forecasting Toolbox
 
 ## Description
 
@@ -21,14 +21,14 @@ The output of the three individual web services provided by the Forecasting Tool
 
 ## Requirements
 
-The Forecaster Toolbox is developed to run on Unix and Windows systems with python 3.6.*  nstalled. We suggest installing python via the Anaconda distribution as it provides an easy way to create a virtual environment and install dependencies. The configuration steps needed, are described below:
+The Forecasting Toolbox is developed to run on Unix and Windows systems with python 3.6.*  nstalled. We suggest installing python via the Anaconda distribution as it provides an easy way to create a virtual environment and install dependencies. The configuration steps needed, are described below:
 
 - Download the latest Anaconda distribution from: https://www.anaconda.com/distribution/
 - Follow the installation steps described in the Anaconda documentation: https://docs.anaconda.com/anaconda/install/windows/
 
 ## Installation
 
-- Open Anaconda cmd. Running Anaconda cmd activates the base environment. We need to create a specific environment to run Forecaster Toolbox.
+- Open Anaconda cmd. Running Anaconda cmd activates the base environment. We need to create a specific environment to run Forecasting Toolbox.
 
 - Create a new python 3.6.4 environment by running the command below:
 ```bash
@@ -99,6 +99,23 @@ This mode is useful for development since it has debugging enabled (e.g. in case
 python forecaster_service.py 127.0.0.1 5000 forecasting_toolbox waitress
 ```
 
+## Build using Docker
+
+In this section, we provide instructions on how the user can build a new Docker Image of the Forecasting Toolbox from scratch. This is necessary especially for those who contribute in the development of the toolbox.
+
+- **Step 1**: Download and install [Docker](https://www.docker.com/)
+- **Step 2**: Clone the latest Forecasting Toolbox version from GitLab and navigate to the home directory of the downloaded file. You should see a .DockerFile and a environment.yml file, which contains the Conda environment dependencies. 
+- **Step 3**: In the home directory of the downloaded file, open cmd and run the following command:
+```bash
+sudo docker build -t forecaster_toolbox .
+``` 
+This command will result in the creation of a Docker Image named "forecaster_toolbox". In order to create a Docker Container from this image, execute the following command:
+```bash
+sudo docker run -it --name forecaster-toolbox-test -p 5000:5000 forecaster_toolbox
+``` 
+This command will generate and run a Docker Container named forecaster-toolbox-test in interactive session mode, i.e. it will open a command promt inside the Container. 
+- **Step 4**: To start the server, use the command promt inside the running Container and execute the commands described in section [Run Server](/sdk4ed/forecaster-toolbox#run-built-in-server).
+
 ## Usage
 
 ### Example
@@ -109,4 +126,4 @@ http://127.0.0.1:5000/ForecasterToolbox/TDForecasting?horizon=5&project=apache_k
 
 You will get a JSON response containing TD forecasts of a sample application (Apache Kafka) for an horizon of 5 versions ahead, using the Ridge regressor model.
 
-**TODO: More details will be added soon regarding Forecaster Toolbox API usage and its parameters**
+**TODO: More details will be added soon regarding Forecasting Toolbox API usage and its parameters**
