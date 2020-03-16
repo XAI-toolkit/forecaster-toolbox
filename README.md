@@ -79,21 +79,21 @@ optional arguments:
 
 You can change the HOST, PORT, DBNAME and SERVER_MODE according to your needs.
 
-#### Built-in Flask server:
+- Built-in Flask server:
 
 ```
          127.0.0.1:5000
 Client <----------------> Flask
 ```
 
-#### Using Waitress:
+- Waitress server:
 
 ```
          127.0.0.1:5000
 Client <----------------> Waitress <---> Flask
 ```
 
-### Run built-in server
+### Run built-in Flask server
 
 To run the Forecasting Toolbox server using the built-in *Flask* mode, execute the following command: 
 
@@ -105,7 +105,7 @@ This mode is useful for development since it has debugging enabled (e.g. in case
 
 **Warning**: Single-threaded, debugging enabled. Do NOT use this mode in production!
 
-### Run server using Waitress
+### Run Waitress server
 
 To run the Forecasting Toolbox server using the *Waitress* mode, execute the following command: 
 
