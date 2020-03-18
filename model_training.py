@@ -18,7 +18,7 @@ from sklearn.exceptions import ConvergenceWarning
 from pmdarima import auto_arima
 from utils import mean_absolute_percentage_error, root_mean_squared_error, series_to_supervised, read_from_database
 
-DEBUG = bool(os.environ.get('DEBUG', False))
+DEBUG = bool(os.environ.get('DEBUG'))
 
 #===============================================================================
 # grid_search_best ()
