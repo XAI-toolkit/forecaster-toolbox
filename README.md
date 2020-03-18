@@ -61,59 +61,82 @@ This command will generate and run a Docker Container named *forecaster-toolbox-
 
 ## Run Server
 
-You can run the server in various modes using the `forecaster_service.py` script:
+You can run the server in various modes using Python to run the `forecaster_service.py` script:
 
 ```
-usage: forecaster_service.py [-h] [--debug] HOST PORT DBNAME SERVER_MODE
+usage: forecaster_service.py [-h] [-dh DB_HOST] [-dp DB_PORT] [-dn DB_DBNAME]
+                             [--debug]
+                             HOST PORT SERVER_MODE
 
 positional arguments:
-  HOST         Server HOST (e.g. "localhost")
-  PORT         Server PORT (e.g. "5000")
-  DBNAME       Database name
-  SERVER_MODE  builtin, waitress
+  HOST           Server HOST (e.g. "localhost")
+  PORT           Server PORT (e.g. "5000")
+  SERVER_MODE    builtin, waitress
 
 optional arguments:
-  -h, --help   show this help message and exit
-  --debug      Run builtin server in debug mode (default: False)
+  -h, --help     show this help message and exit
+  -dh DB_HOST    MongoDB HOST (e.g. "localhost") (default: localhost)
+  -dp DB_PORT    MongoDB PORT (e.g. "27017") (default: 27017)
+  -dn DB_DBNAME  Database NAME (default: forecaster_service)
+  --debug        Run builtin server in debug mode (default: False)
 ```
 
-You can change the HOST, PORT, DBNAME and SERVER_MODE according to your needs.
+`HOST`, `PORT`, and `SERVER_MODE` arguments are **mandatory**. You can set them according to your needs.
+`DB_HOST`, `DB_PORT`, and `DB_DBNAME` arguments are **optional** and assume that there is a MongoDB instance running either on a local machine or remotely. In case that there is no such MongoDB instance running, the Forecasting Toolbox will still return the results, but they will not be stored anywhere.
 
-- Built-in Flask server:
+### Run built-in Flask server
 
 ```
          127.0.0.1:5000
 Client <----------------> Flask
 ```
 
-- Waitress server:
+To start the Forecasting Toolbox using the built-in **Flask** server, use the command promt inside the active Conda or Container environment and execute the following command: 
+
+```bash
+python forecaster_service.py 0.0.0.0 5000 builtin --debug
+```
+
+This command will start the built-in Flask server locally (0.0.0.0) on port 5000.
+
+**MongoDB Integration**
+
+In case there is a MongoDB instance running, use the command promt inside the active conda or Container environment and execute the following command: 
+
+```bash
+python forecaster_service.py 0.0.0.0 5000 builtin -dh localhost -dp 27017 -dn forecaster_service --debug
+```
+
+This command will start the built-in Flask server locally on port 5000 and store the results on a MongoDB database named "forecaster_service" running locally on port 27017.
+
+**Warning**: The built-in Flask mode is useful for development since it has debugging enabled (e.g. in case of error the client gets a full stack trace). However, it is single-threaded. Do NOT use this mode in production!
+
+### Run Waitress server
 
 ```
          127.0.0.1:5000
 Client <----------------> Waitress <---> Flask
 ```
 
-### Run built-in Flask server
-
-To run the Forecasting Toolbox server using the built-in *Flask* mode, execute the following command: 
+To start the Forecasting Toolbox using the **Waitress** server, use the command promt inside the active Conda or Container environment and execute the following command:
 
 ```bash
-python forecaster_service.py 0.0.0.0 5000 forecaster_service builtin --debug
+python forecaster_service.py 0.0.0.0 5000 waitress
 ```
 
-This mode is useful for development since it has debugging enabled (e.g. in case of error the client gets a full stack trace).
+This command will start the Waitress server locally (0.0.0.0) on port 5000.
 
-**Warning**: Single-threaded, debugging enabled. Do NOT use this mode in production!
+**MongoDB Integration**
 
-### Run Waitress server
-
-To run the Forecasting Toolbox server using the *Waitress* mode, execute the following command: 
+In case there is a MongoDB instance running, use the command promt inside the active conda or Container environment and execute the following command: 
 
 ```bash
-python forecaster_service.py 0.0.0.0 5000 forecaster_service waitress
+python forecaster_service.py 0.0.0.0 5000 waitress -dh localhost -dp 27017 -dn forecaster_service
 ```
 
-This mode is higly recommended in real production environments, since it supports scaling and multiple-request handling features.
+This command will start the Waitress server locally on port 5000 and store the results on a MongoDB database named "forecaster_service" running locally on port 27017.
+
+**Warning**: The Waitress mode is higly recommended in real production environments, since it supports scaling and multiple-request handling features.
 
 ## Usage
 
