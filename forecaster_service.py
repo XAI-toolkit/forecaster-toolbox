@@ -182,29 +182,33 @@ def unprocessable_entity(error=None):
 #===============================================================================
 # run_server ()
 #===============================================================================
-def run_server(host, port, dbname, mode, debug_mode):
+def run_server(host, port, mode, dbhost, dbport, dbname, debug_mode):
     """
     Executes the command to start the server
     Arguments:
         host: retrieved from create_arg_parser() as a string
         port: retrieved from create_arg_parser() as a int
-        dbname: retrieved from create_arg_parser() as a string
         mode: retrieved from create_arg_parser() as a string
+        dbhost: retrieved from create_arg_parser() as a string
+        dbport: retrieved from create_arg_parser() as a string
+        dbname: retrieved from create_arg_parser() as a string
         debug_mode: retrieved from create_arg_parser() as a bool
     """
     
     print('server:      %s:%s' % (host, port))
     print('mode:        %s' % (mode))
-    print('dbname:      %s' % (dbname))
+    print('db server:      %s:%s' % (dbhost, dbport))
+    print('db name:      %s' % (dbname))
     print('debug_mode:  %s' % (debug_mode))
     
     # Store settings in environment variables
     if debug_mode:
         print(" *** Debug enabled! ***")
-        os.environ['DEBUG'] = 'True'
+    
+    os.environ['DEBUG'] = str(debug_mode)
+    os.environ['MONGO_HOST'] = dbhost
+    os.environ['MONGO_PORT'] = dbport
     os.environ['MONGO_DBNAME'] = dbname
-    os.environ['MONGO_HOST'] = 'localhost'
-    os.environ['MONGO_PORT'] = '27017'
     
     if mode == 'builtin':
         # Run app in debug mode using flask
@@ -230,8 +234,10 @@ def create_arg_parser():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('h', metavar = 'HOST', help = 'Server HOST (e.g. "localhost")', type = str)
     parser.add_argument('p', metavar = 'PORT', help = 'Server PORT (e.g. "5000")', type = int)
-    parser.add_argument('d', metavar = 'DBNAME', help = "Database name", type = str)
     parser.add_argument('m', metavar='SERVER_MODE', help = ", ".join(MODES), choices = MODES, type = str)
+    parser.add_argument('-dh', metavar = 'DB_HOST', help = 'MongoDB HOST (e.g. "localhost")', type = str, default = 'localhost')
+    parser.add_argument('-dp', metavar = 'DB_PORT', help = 'MongoDB PORT (e.g. "27017")', type = str, default = '27017')
+    parser.add_argument('-dn', metavar = 'DB_DBNAME', help = "Database NAME", type = str, default = 'forecaster_service')
     parser.add_argument('--debug', help = "Run builtin server in debug mode", action = 'store_true', default = False)
     
     return parser
@@ -253,13 +259,15 @@ def main():
     # Parse arguments
     args = parser.parse_args()
     host = args.h
-    port = args.p
-    dbname = args.d
     mode = args.m
+    port = args.p
+    dbhost = args.dh
+    dbport = args.dp
+    dbname = args.dn
     debug_mode = args.debug
     
     # Run server with user-given arguments
-    run_server(host, port, dbname, mode, debug_mode)
+    run_server(host, port, mode, dbhost, dbport, dbname, debug_mode)
     
 if __name__ == '__main__':
     main()
