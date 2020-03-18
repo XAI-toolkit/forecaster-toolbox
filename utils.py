@@ -120,9 +120,9 @@ def import_to_database(dict_obj, collection_name):
     """
     
     # Read settings from environment variables
-    MONGO_HOST = os.environ.get('MONGO_HOST', 'localhost')
-    MONGO_PORT = int(os.environ.get('MONGO_PORT', 27017))
-    DB_NAME = os.environ.get('MONGO_DBNAME', 'forecasting_toolbox')
+    MONGO_HOST = os.environ.get('MONGO_HOST')
+    MONGO_PORT = int(os.environ.get('MONGO_PORT'))
+    DB_NAME = os.environ.get('MONGO_DBNAME')
     
     client = pymongo.MongoClient(MONGO_HOST, MONGO_PORT, serverSelectionTimeoutMS = 2000)
     db = client[DB_NAME]
@@ -152,7 +152,7 @@ def read_from_database(db_name, db_url, db_port, collection_name, fields):
         A dataframe with the fields recovered from the Mongo database.
     """
     
-    # Read settings from environment variables
+    # Read settings from parameters
     MONGO_HOST = db_url
     MONGO_PORT = db_port
     DB_NAME = db_name
