@@ -82,6 +82,7 @@ optional arguments:
 ```
 
 `HOST`, `PORT`, and `SERVER_MODE` arguments are **mandatory**. You can set them according to your needs.
+
 `DB_HOST`, `DB_PORT`, and `DB_DBNAME` arguments are **optional** and assume that there is a MongoDB instance running either on a local machine or remotely. In case that there is no such MongoDB instance running, the Forecasting Toolbox will still return the results, but they will not be stored anywhere.
 
 ### Run built-in Flask server
