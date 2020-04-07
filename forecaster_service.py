@@ -21,32 +21,32 @@ CORS(app)
 # td_forecasting ()
 #===============================================================================
 @app.route('/ForecasterToolbox/TDForecasting', methods=['GET'])
-def td_forecasting(horizon_param=None, project_param=None, regressor_param=None, ground_truth_param=None, test_param=None):
+def td_forecasting(horizon_param_td=None, project_param_td=None, regressor_param_td=None, ground_truth_param_td=None, test_param_td=None):
     """
     API Call to TDForecasting service
     Arguments:
-        horizon_param: Required (sent as URL query parameter from API Call)
-        project_param: Required (sent as URL query parameter from API Call)
-        regressor_param: Optional (sent as URL query parameter from API Call)
-        ground_truth_param: Optional (sent as URL query parameter from API Call)
-        test_param: Optional (sent as URL query parameter from API Call)
+        horizon_param_td: Required (sent as URL query parameter from API Call)
+        project_param_td: Required (sent as URL query parameter from API Call)
+        regressor_param_td: Optional (sent as URL query parameter from API Call)
+        ground_truth_param_td: Optional (sent as URL query parameter from API Call)
+        test_param_td: Optional (sent as URL query parameter from API Call)
     Returns:
         A JSON containing the forecasting results, status code and a message.
     """
 
     # Parse URL-encoded parameters
-    horizon_param = request.args.get('horizon', type=int) # Required: if key doesn't exist, returns None
-    project_param = request.args.get('project', type=str) # Required: if key doesn't exist, returns None
-    regressor_param = request.args.get('regressor', default='auto', type=str) # Optional: if key doesn't exist, returns auto
-    ground_truth_param = request.args.get('ground_truth', default='no', type=str) # Optional: if key doesn't exist, returns no
-    test_param = request.args.get('test', default='no', type=str) # Optional: if key doesn't exist, returns no
+    horizon_param_td = request.args.get('horizon', type=int) # Required: if key doesn't exist, returns None
+    project_param_td = request.args.get('project', type=str) # Required: if key doesn't exist, returns None
+    regressor_param_td = request.args.get('regressor', default='auto', type=str) # Optional: if key doesn't exist, returns auto
+    ground_truth_param_td = request.args.get('ground_truth', default='no', type=str) # Optional: if key doesn't exist, returns no
+    test_param_td = request.args.get('test', default='no', type=str) # Optional: if key doesn't exist, returns no
 
     # If required parameters are missing from URL
-    if horizon_param is None or project_param is None or regressor_param is None or ground_truth_param is None or test_param is None:
+    if horizon_param_td is None or project_param_td is None or regressor_param_td is None or ground_truth_param_td is None or test_param_td is None:
         return(unprocessable_entity())
     else:
         # Call build_and_train() function and retrieve forecasts
-        results = build_and_train_td(horizon_param, project_param, regressor_param, ground_truth_param, test_param)
+        results = build_and_train_td(horizon_param_td, project_param_td, regressor_param_td, ground_truth_param_td, test_param_td)
 
         # Add to database
         import_to_database(results, 'td_forecasts')
@@ -67,32 +67,32 @@ def td_forecasting(horizon_param=None, project_param=None, regressor_param=None,
 # dependability_forecasting ()
 #===============================================================================
 @app.route('/ForecasterToolbox/DependabilityForecasting', methods=['GET'])
-def dependability_forecasting(horizon_param=None, project_param=None, regressor_param=None, ground_truth_param=None, test_param=None):
+def dependability_forecasting(horizon_param_dep=None, project_param_dep=None, regressor_param_dep=None, ground_truth_param_dep=None, test_param_dep=None):
     """
     API Call to DependabilityForecasting service
     Arguments:
-        horizon_param: Required (sent as URL query parameter from API Call)
-        project_param: Required (sent as URL query parameter from API Call)
-        regressor_param: Optional (sent as URL query parameter from API Call)
-        ground_truth_param: Optional (sent as URL query parameter from API Call)
-        test_param: Optional (sent as URL query parameter from API Call)
+        horizon_param_dep: Required (sent as URL query parameter from API Call)
+        project_param_dep: Required (sent as URL query parameter from API Call)
+        regressor_param_dep: Optional (sent as URL query parameter from API Call)
+        ground_truth_param_dep: Optional (sent as URL query parameter from API Call)
+        test_param_dep: Optional (sent as URL query parameter from API Call)
     Returns:
         A JSON containing the forecasting results, status code and a message.
     """
 
     # Parse URL-encoded parameters
-    horizon_param = request.args.get('horizon', type=int) # Required: if key doesn't exist, returns None
-    project_param = request.args.get('project', type=str) # Required: if key doesn't exist, returns None
-    regressor_param = request.args.get('regressor', default='auto', type=str) # Optional: if key doesn't exist, returns auto
-    ground_truth_param = request.args.get('ground_truth', default='no', type=str) # Optional: if key doesn't exist, returns no
-    test_param = request.args.get('test', default='no', type=str) # Optional: if key doesn't exist, returns no
+    horizon_param_dep = request.args.get('horizon', type=int) # Required: if key doesn't exist, returns None
+    project_param_dep = request.args.get('project', type=str) # Required: if key doesn't exist, returns None
+    regressor_param_dep = request.args.get('regressor', default='auto', type=str) # Optional: if key doesn't exist, returns auto
+    ground_truth_param_dep = request.args.get('ground_truth', default='no', type=str) # Optional: if key doesn't exist, returns no
+    test_param_dep = request.args.get('test', default='no', type=str) # Optional: if key doesn't exist, returns no
  
     # If required parameters are missing from URL
-    if horizon_param is None or project_param is None or regressor_param is None or ground_truth_param is None or test_param is None:
+    if horizon_param_dep is None or project_param_dep is None or regressor_param_dep is None or ground_truth_param_dep is None or test_param_dep is None:
         return(unprocessable_entity())
     else:
         # Call build_and_train() function and retrieve forecasts
-        results = build_and_train_dependability(horizon_param, project_param, regressor_param, ground_truth_param, test_param)
+        results = build_and_train_dependability(horizon_param_dep, project_param_dep, regressor_param_dep, ground_truth_param_dep, test_param_dep)
 
         # Add to database
         import_to_database(results, 'dependability_forecasts')
@@ -113,32 +113,32 @@ def dependability_forecasting(horizon_param=None, project_param=None, regressor_
 # energy_forecasting ()
 #===============================================================================
 @app.route('/ForecasterToolbox/EnergyForecasting', methods=['GET'])
-def energy_forecasting(horizon_param=None, project_param=None, regressor_param=None, ground_truth_param=None, test_param=None):
+def energy_forecasting(horizon_param_en=None, project_param_en=None, regressor_param_en=None, ground_truth_param_en=None, test_param_en=None):
     """
     API Call to EnergyForecasting service
     Arguments:
-        horizon_param: Required (sent as URL query parameter from API Call)
-        project_param: Required (sent as URL query parameter from API Call)
-        regressor_param: Optional (sent as URL query parameter from API Call)
-        ground_truth_param: Optional (sent as URL query parameter from API Call)
-        test_param: Optional (sent as URL query parameter from API Call)
+        horizon_param_en: Required (sent as URL query parameter from API Call)
+        project_param_en: Required (sent as URL query parameter from API Call)
+        regressor_param_en: Optional (sent as URL query parameter from API Call)
+        ground_truth_param_en: Optional (sent as URL query parameter from API Call)
+        test_param_en: Optional (sent as URL query parameter from API Call)
     Returns:
         A JSON containing the forecasting results, status code and a message.
     """
 
     # Parse URL-encoded parameters
-    horizon_param = request.args.get('horizon', type=int) # Required: if key doesn't exist, returns None
-    project_param = request.args.get('project', type=str) # Required: if key doesn't exist, returns None
-    regressor_param = request.args.get('regressor', default='auto', type=str) # Optional: if key doesn't exist, returns auto
-    ground_truth_param = request.args.get('ground_truth', default='no', type=str) # Optional: if key doesn't exist, returns no
-    test_param = request.args.get('test', default='no', type=str) # Optional: if key doesn't exist, returns no
+    horizon_param_en = request.args.get('horizon', type=int) # Required: if key doesn't exist, returns None
+    project_param_en = request.args.get('project', type=str) # Required: if key doesn't exist, returns None
+    regressor_param_en = request.args.get('regressor', default='auto', type=str) # Optional: if key doesn't exist, returns auto
+    ground_truth_param_en = request.args.get('ground_truth', default='no', type=str) # Optional: if key doesn't exist, returns no
+    test_param_en = request.args.get('test', default='no', type=str) # Optional: if key doesn't exist, returns no
 
     # If required parameters are missing from URL
-    if horizon_param is None or project_param is None or regressor_param is None or ground_truth_param is None or test_param is None:
+    if horizon_param_en is None or project_param_en is None or regressor_param_en is None or ground_truth_param_en is None or test_param_en is None:
         return(unprocessable_entity())
     else:
         # Call build_and_train() function and retrieve forecasts
-        results = build_and_train_energy(horizon_param, project_param, regressor_param, ground_truth_param, test_param)
+        results = build_and_train_energy(horizon_param_en, project_param_en, regressor_param_en, ground_truth_param_en, test_param_en)
 
         # Add to database
         import_to_database(results, 'energy_forecasts')
