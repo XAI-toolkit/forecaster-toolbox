@@ -8,9 +8,9 @@ import sys
 import os
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from waitress import serve
 from model_training import build_and_train_td, build_and_train_dependability, build_and_train_energy
 from utils import import_to_database, objectid_to_string
-from waitress import serve
 
 # Create the Flask app
 app = Flask(__name__)
@@ -18,10 +18,10 @@ app = Flask(__name__)
 CORS(app)
 
 #===============================================================================
-# TDForecasting ()
+# td_forecasting ()
 #===============================================================================
 @app.route('/ForecasterToolbox/TDForecasting', methods=['GET'])
-def TDForecasting(horizon_param = None, project_param = None, regressor_param = None, ground_truth_param = None, test_param = None):
+def td_forecasting(horizon_param=None, project_param=None, regressor_param=None, ground_truth_param=None, test_param=None):
     """
     API Call to TDForecasting service
     Arguments:
@@ -33,41 +33,41 @@ def TDForecasting(horizon_param = None, project_param = None, regressor_param = 
     Returns:
         A JSON containing the forecasting results, status code and a message.
     """
-    
+
     # Parse URL-encoded parameters
-    horizon_param = request.args.get('horizon', type = int) # Required: if key doesn't exist, returns None
-    project_param = request.args.get('project', type = str) # Required: if key doesn't exist, returns None
-    regressor_param = request.args.get('regressor', default = 'auto', type = str) # Optional: if key doesn't exist, returns auto
-    ground_truth_param = request.args.get('ground_truth', default = 'no', type = str) # Optional: if key doesn't exist, returns no
-    test_param = request.args.get('test', default = 'no', type = str) # Optional: if key doesn't exist, returns no
-        
+    horizon_param = request.args.get('horizon', type=int) # Required: if key doesn't exist, returns None
+    project_param = request.args.get('project', type=str) # Required: if key doesn't exist, returns None
+    regressor_param = request.args.get('regressor', default='auto', type=str) # Optional: if key doesn't exist, returns auto
+    ground_truth_param = request.args.get('ground_truth', default='no', type=str) # Optional: if key doesn't exist, returns no
+    test_param = request.args.get('test', default='no', type=str) # Optional: if key doesn't exist, returns no
+
     # If required parameters are missing from URL
     if horizon_param is None or project_param is None or regressor_param is None or ground_truth_param is None or test_param is None:
         return(unprocessable_entity())
     else:
         # Call build_and_train() function and retrieve forecasts
         results = build_and_train_td(horizon_param, project_param, regressor_param, ground_truth_param, test_param)
-        
+
         # Add to database
         import_to_database(results, 'td_forecasts')
         results = objectid_to_string(results)
-        
+
         # Compose and jsonify respond
         message = {
-                'status': 200,
-                'message': 'The request was fulfilled.',
-                'results': results,
+            'status': 200,
+            'message': 'The request was fulfilled.',
+            'results': results,
     	}
         resp = jsonify(message)
         resp.status_code = 200
-        
-        return(resp)
-        
+
+        return resp
+
 #===============================================================================
-# DependabilityForecasting ()
+# dependability_forecasting ()
 #===============================================================================
 @app.route('/ForecasterToolbox/DependabilityForecasting', methods=['GET'])
-def DependabilityForecasting(horizon_param = None, project_param = None, regressor_param = None, ground_truth_param = None, test_param = None):
+def dependability_forecasting(horizon_param=None, project_param=None, regressor_param=None, ground_truth_param=None, test_param=None):
     """
     API Call to DependabilityForecasting service
     Arguments:
@@ -79,41 +79,41 @@ def DependabilityForecasting(horizon_param = None, project_param = None, regress
     Returns:
         A JSON containing the forecasting results, status code and a message.
     """
-    
+
     # Parse URL-encoded parameters
-    horizon_param = request.args.get('horizon', type = int) # Required: if key doesn't exist, returns None
-    project_param = request.args.get('project', type = str) # Required: if key doesn't exist, returns None
-    regressor_param = request.args.get('regressor', default = 'auto', type = str) # Optional: if key doesn't exist, returns auto
-    ground_truth_param = request.args.get('ground_truth', default = 'no', type = str) # Optional: if key doesn't exist, returns no
-    test_param = request.args.get('test', default = 'no', type = str) # Optional: if key doesn't exist, returns no
-        
+    horizon_param = request.args.get('horizon', type=int) # Required: if key doesn't exist, returns None
+    project_param = request.args.get('project', type=str) # Required: if key doesn't exist, returns None
+    regressor_param = request.args.get('regressor', default='auto', type=str) # Optional: if key doesn't exist, returns auto
+    ground_truth_param = request.args.get('ground_truth', default='no', type=str) # Optional: if key doesn't exist, returns no
+    test_param = request.args.get('test', default='no', type=str) # Optional: if key doesn't exist, returns no
+ 
     # If required parameters are missing from URL
     if horizon_param is None or project_param is None or regressor_param is None or ground_truth_param is None or test_param is None:
         return(unprocessable_entity())
     else:
         # Call build_and_train() function and retrieve forecasts
         results = build_and_train_dependability(horizon_param, project_param, regressor_param, ground_truth_param, test_param)
-        
+
         # Add to database
         import_to_database(results, 'dependability_forecasts')
         results = objectid_to_string(results)
-        
+
         # Compose and jsonify respond
         message = {
-                'status': 200,
-                'message': 'The request was fulfilled.',
-                'results': results,
+            'status': 200,
+            'message': 'The request was fulfilled.',
+            'results': results,
     	}
         resp = jsonify(message)
         resp.status_code = 200
-        
-        return(resp)
-        
+
+        return resp
+
 #===============================================================================
-# EnergyForecasting ()
+# energy_forecasting ()
 #===============================================================================
 @app.route('/ForecasterToolbox/EnergyForecasting', methods=['GET'])
-def EnergyForecasting(horizon_param = None, project_param = None, regressor_param = None, ground_truth_param = None, test_param = None):
+def energy_forecasting(horizon_param=None, project_param=None, regressor_param=None, ground_truth_param=None, test_param=None):
     """
     API Call to EnergyForecasting service
     Arguments:
@@ -125,59 +125,59 @@ def EnergyForecasting(horizon_param = None, project_param = None, regressor_para
     Returns:
         A JSON containing the forecasting results, status code and a message.
     """
-    
+
     # Parse URL-encoded parameters
-    horizon_param = request.args.get('horizon', type = int) # Required: if key doesn't exist, returns None
-    project_param = request.args.get('project', type = str) # Required: if key doesn't exist, returns None
-    regressor_param = request.args.get('regressor', default = 'auto', type = str) # Optional: if key doesn't exist, returns auto
-    ground_truth_param = request.args.get('ground_truth', default = 'no', type = str) # Optional: if key doesn't exist, returns no
-    test_param = request.args.get('test', default = 'no', type = str) # Optional: if key doesn't exist, returns no
-        
+    horizon_param = request.args.get('horizon', type=int) # Required: if key doesn't exist, returns None
+    project_param = request.args.get('project', type=str) # Required: if key doesn't exist, returns None
+    regressor_param = request.args.get('regressor', default='auto', type=str) # Optional: if key doesn't exist, returns auto
+    ground_truth_param = request.args.get('ground_truth', default='no', type=str) # Optional: if key doesn't exist, returns no
+    test_param = request.args.get('test', default='no', type=str) # Optional: if key doesn't exist, returns no
+
     # If required parameters are missing from URL
     if horizon_param is None or project_param is None or regressor_param is None or ground_truth_param is None or test_param is None:
         return(unprocessable_entity())
     else:
         # Call build_and_train() function and retrieve forecasts
         results = build_and_train_energy(horizon_param, project_param, regressor_param, ground_truth_param, test_param)
-        
+
         # Add to database
         import_to_database(results, 'energy_forecasts')
         results = objectid_to_string(results)
-        
+
         # Compose and jsonify respond
         message = {
-                'status': 200,
-                'message': 'The request was fulfilled.',
-                'results': results,
+            'status': 200,
+            'message': 'The request was fulfilled.',
+            'results': results,
     	}
         resp = jsonify(message)
         resp.status_code = 200
-        
-        return(resp)
-        
+
+        return resp
+
 #===============================================================================
 # errorhandler ()
 #===============================================================================
 @app.errorhandler(400)
 def bad_request(error=None):
-	message = {
-            'status': 400,
-            'message': 'Bad Request: ' + request.url + ' --> Please check your data payload.',
-	}
-	resp = jsonify(message)
-	resp.status_code = 400
+    message = {
+        'status': 400,
+        'message': 'Bad Request: ' + request.url + ' --> Please check your data payload.',
+    }
+    resp = jsonify(message)
+    resp.status_code = 400
 
-	return(resp)
+    return(resp)
 @app.errorhandler(422)
 def unprocessable_entity(error=None):
-	message = {
-            'status': 400,
-            'message': 'Unprocessable Entity: ' + request.url + ' --> Missing or invalid parameters.',
-	}
-	resp = jsonify(message)
-	resp.status_code = 400
+    message = {
+        'status': 400,
+        'message': 'Unprocessable Entity: ' + request.url + ' --> Missing or invalid parameters.',
+    }
+    resp = jsonify(message)
+    resp.status_code = 400
 
-	return(resp)
+    return resp
 
 #===============================================================================
 # run_server ()
@@ -194,32 +194,32 @@ def run_server(host, port, mode, dbhost, dbport, dbname, debug_mode):
         dbname: retrieved from create_arg_parser() as a string
         debug_mode: retrieved from create_arg_parser() as a bool
     """
-    
+
     print('server:      %s:%s' % (host, port))
     print('mode:        %s' % (mode))
     print('db server:      %s:%s' % (dbhost, dbport))
     print('db name:      %s' % (dbname))
     print('debug_mode:  %s' % (debug_mode))
-    
+
     # Store settings in environment variables
     if debug_mode:
         print(" *** Debug enabled! ***")
-    
+
     os.environ['DEBUG'] = str(debug_mode)
     os.environ['MONGO_HOST'] = dbhost
     os.environ['MONGO_PORT'] = dbport
     os.environ['MONGO_DBNAME'] = dbname
-    
+
     if mode == 'builtin':
         # Run app in debug mode using flask
         app.run(host, port, debug_mode)
     elif mode == 'waitress':
         # Run app in production mode using waitress
-        serve(app, host = host, port = port)
+        serve(app, host=host, port=port)
     else:
         print('Server mode "%s" not yet implemented' % mode)
         sys.exit(1)
-    
+
 #===============================================================================
 # create_arg_parser ()
 #===============================================================================
@@ -229,17 +229,17 @@ def create_arg_parser():
     Returns:
         A Parser object
     """
-    MODES = [ 'builtin', 'waitress' ]
-    
+    server_modes = ['builtin', 'waitress']
+
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('h', metavar = 'HOST', help = 'Server HOST (e.g. "localhost")', type = str)
-    parser.add_argument('p', metavar = 'PORT', help = 'Server PORT (e.g. "5000")', type = int)
-    parser.add_argument('m', metavar='SERVER_MODE', help = ", ".join(MODES), choices = MODES, type = str)
-    parser.add_argument('-dh', metavar = 'DB_HOST', help = 'MongoDB HOST (e.g. "localhost")', type = str, default = 'localhost')
-    parser.add_argument('-dp', metavar = 'DB_PORT', help = 'MongoDB PORT (e.g. "27017")', type = str, default = '27017')
-    parser.add_argument('-dn', metavar = 'DB_DBNAME', help = "Database NAME", type = str, default = 'forecaster_service')
-    parser.add_argument('--debug', help = "Run builtin server in debug mode", action = 'store_true', default = False)
-    
+    parser.add_argument('h', metavar='HOST', help='Server HOST (e.g. "localhost")', type=str)
+    parser.add_argument('p', metavar='PORT', help='Server PORT (e.g. "5000")', type=int)
+    parser.add_argument('m', metavar='SERVER_MODE', help=", ".join(server_modes), choices=server_modes, type=str)
+    parser.add_argument('-dh', metavar='DB_HOST', help='MongoDB HOST (e.g. "localhost")', type=str, default='localhost')
+    parser.add_argument('-dp', metavar='DB_PORT', help='MongoDB PORT (e.g. "27017")', type=str, default='27017')
+    parser.add_argument('-dn', metavar='DB_DBNAME', help="Database NAME", type=str, default='forecaster_service')
+    parser.add_argument('--debug', help="Run builtin server in debug mode", action='store_true', default=False)
+
     return parser
 
 #===============================================================================
@@ -250,7 +250,7 @@ def main():
     The main() function of the script acting as the entry point
     """
     parser = create_arg_parser()
-    
+
     # If script run without arguments, print syntax
     if len(sys.argv) == 1:
         parser.print_help()
@@ -265,9 +265,9 @@ def main():
     dbport = args.dp
     dbname = args.dn
     debug_mode = args.debug
-    
+
     # Run server with user-given arguments
     run_server(host, port, mode, dbhost, dbport, dbname, debug_mode)
-    
+
 if __name__ == '__main__':
     main()
