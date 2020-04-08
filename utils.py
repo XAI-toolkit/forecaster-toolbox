@@ -163,7 +163,7 @@ def read_from_database(db_name, db_url, db_port, collection_name, fields):
     collection = db_instance[collection_name]
 
     try:
-        result = result = pd.DataFrame(list(collection.find({}, fields)))
+        result = pd.DataFrame(list(collection.find({}, fields)))
     except Exception as e:
         result = e
     if debug:
