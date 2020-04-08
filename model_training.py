@@ -3,9 +3,8 @@
 @author: tsoukj
 """
 
-#import numpy as np
-import pandas as pd
 import os
+import pandas as pd
 from sklearn.model_selection import GridSearchCV, TimeSeriesSplit, cross_validate, train_test_split
 from sklearn.linear_model import LinearRegression, Lasso, Ridge
 from sklearn.svm import SVR
@@ -16,7 +15,7 @@ from sklearn.metrics import make_scorer
 from sklearn.utils.testing import ignore_warnings
 from sklearn.exceptions import ConvergenceWarning
 from pmdarima import auto_arima
-from utils import mean_absolute_percentage_error, root_mean_squared_error, series_to_supervised #, read_from_database
+from utils import mean_absolute_percentage_error, root_mean_squared_error, series_to_supervised
 
 debug = bool(os.environ.get('DEBUG'))
 
@@ -253,10 +252,10 @@ def build_and_train_td(horizon_param, project_param, regressor_param, ground_tru
     window_size = 2
 
     # Read dataset
-    dataset = pd.read_csv('data/%s.csv' % project_param, sep=";", usecols=metrics_td)
+    dataset_td = pd.read_csv('data/%s.csv' % project_param, sep=";", usecols=metrics_td)
     # dataset = read_from_database('td_dummy', 'localhost', 27017, project_param, {'_id': 0, 'bugs': 1, 'vulnerabilities': 1, 'code_smells': 1, 'sqale_index': 1, 'reliability_remediation_effort': 1, 'security_remediation_effort': 1})
-    dataset['total_principal'] = dataset['reliability_remediation_effort'] + dataset['security_remediation_effort'] + dataset['sqale_index']
-    dataset = dataset.drop(columns=['sqale_index', 'reliability_remediation_effort', 'security_remediation_effort'])
+    dataset_td['total_principal'] = dataset_td['reliability_remediation_effort'] + dataset_td['security_remediation_effort'] + dataset_td['sqale_index']
+    dataset_td = dataset_td.drop(columns=['sqale_index', 'reliability_remediation_effort', 'security_remediation_effort'])
 
     # Initialise variables
     dict_result = {
@@ -276,11 +275,11 @@ def build_and_train_td(horizon_param, project_param, regressor_param, ground_tru
         # Test model
         if test_param == 'yes':
             # Split data to training/test set to test model
-            y_array = dataset['total_principal'][0:-horizon_param]
+            y_array = dataset_td['total_principal'][0:-horizon_param]
         # Deploy model
         else:
             # Set Y to to deploy model for real forecasts
-            y_array = dataset['total_principal']
+            y_array = dataset_td['total_principal']
 
         # Make forecasts for training/test set
         regressor = create_regressor(regressor_param, None, y_array)
@@ -302,7 +301,7 @@ def build_and_train_td(horizon_param, project_param, regressor_param, ground_tru
                 print('=========================== Horizon: %s ============================' % intermediate_horizon)
 
             # Add time-shifted prior and future period
-            data = series_to_supervised(dataset, n_in=window_size)
+            data = series_to_supervised(dataset_td, n_in=window_size)
 
             # Append dependend variable column with value equal to total_principal of the target horizon's version
             data['forecasted_total_principal'] = data['total_principal(t)'].shift(-intermediate_horizon)
@@ -318,7 +317,7 @@ def build_and_train_td(horizon_param, project_param, regressor_param, ground_tru
             # Test model
             if test_param == 'yes':
                 # Assign version counter
-                version_counter = len(dataset)-(horizon_param-intermediate_horizon)
+                version_counter = len(dataset_td)-(horizon_param-intermediate_horizon)
                 # Split data to training/test set to test model
                 x_train, x_test, y_train, y_test = train_test_split(x_array, y_array, test_size=horizon_param, random_state=0, shuffle=False)
                 # Make forecasts for training/test set
@@ -327,9 +326,9 @@ def build_and_train_td(horizon_param, project_param, regressor_param, ground_tru
             # Deploy model
             else:
                 # Assign version counter
-                version_counter = len(dataset)+intermediate_horizon
+                version_counter = len(dataset_td)+intermediate_horizon
                 # Define X to to deploy model for real forecasts
-                x_real = series_to_supervised(dataset, n_in=window_size, dropnan=False)
+                x_real = series_to_supervised(dataset_td, n_in=window_size, dropnan=False)
                 x_real = x_real.drop(columns=['total_principal(t-%s)' % (i) for i in range(window_size, 0, -1)])
                 x_real = x_real.iloc[-1, :].values
                 x_real = x_real.reshape(1, -1)
@@ -350,10 +349,10 @@ def build_and_train_td(horizon_param, project_param, regressor_param, ground_tru
     # If the model will return also ground truth values
     if ground_truth_param == 'yes':
         # Fill dataframe with ground thruth
-        for intermediate_horizon in range(0, len(dataset['total_principal'])):
+        for intermediate_horizon in range(0, len(dataset_td['total_principal'])):
             temp_dict = {
                 'version': intermediate_horizon + 1,
-                'value': float(dataset['total_principal'][intermediate_horizon])
+                'value': float(dataset_td['total_principal'][intermediate_horizon])
             }
             list_ground_truth.append(temp_dict)
         # Fill results dictionary with ground thruth
@@ -388,7 +387,7 @@ def build_and_train_dependability(horizon_param, project_param, regressor_param,
     window_size = 2
 
     # Read dataset
-    dataset = pd.read_csv('data/%s.csv' % project_param, sep=";", usecols=metrics_dependability)
+    dataset_dep = pd.read_csv('data/%s.csv' % project_param, sep=";", usecols=metrics_dependability)
     # dataset = read_from_database('dependability_dummy', 'localhost', 27017, project_param, {'_id': 0, 'Resource_Handling': 1, 'Assignment': 1, 'Exception_Handling': 1, 'Misused_Functionality': 1, 'Security_Index': 1})
 
     # Initialise variables
@@ -409,11 +408,11 @@ def build_and_train_dependability(horizon_param, project_param, regressor_param,
         # Test model
         if test_param == 'yes':
             # Split data to training/test set to test model
-            y_array = dataset['Security_Index'][0:-horizon_param]
+            y_array = dataset_dep['Security_Index'][0:-horizon_param]
         # Deploy model
         else:
             # Set Y to to deploy model for real forecasts
-            y_array = dataset['Security_Index']
+            y_array = dataset_dep['Security_Index']
 
         # Make forecasts for training/test set
         regressor = create_regressor(regressor_param, None, y_array)
@@ -435,7 +434,7 @@ def build_and_train_dependability(horizon_param, project_param, regressor_param,
                 print('=========================== Horizon: %s ============================' % intermediate_horizon)
 
             # Add time-shifted prior and future period
-            data = series_to_supervised(dataset, n_in=window_size)
+            data = series_to_supervised(dataset_dep, n_in=window_size)
 
             # Append dependend variable column with value equal to Security_Index of the target horizon's version
             data['forecasted_Security_Index'] = data['Security_Index(t)'].shift(-intermediate_horizon)
@@ -451,7 +450,7 @@ def build_and_train_dependability(horizon_param, project_param, regressor_param,
             # Test model
             if test_param == 'yes':
                 # Assign version counter
-                version_counter = len(dataset)-(horizon_param-intermediate_horizon)
+                version_counter = len(dataset_dep)-(horizon_param-intermediate_horizon)
                 # Split data to training/test set to test model
                 x_train, x_test, y_train, y_test = train_test_split(x_array, y_array, test_size=horizon_param, random_state=0, shuffle=False)
                 # Make forecasts for training/test set
@@ -460,9 +459,9 @@ def build_and_train_dependability(horizon_param, project_param, regressor_param,
             # Deploy model
             else:
                 # Assign version counter
-                version_counter = len(dataset)+intermediate_horizon
+                version_counter = len(dataset_dep)+intermediate_horizon
                 # Define X to to deploy model for real forecasts
-                x_real = series_to_supervised(dataset, n_in=window_size, dropnan=False)
+                x_real = series_to_supervised(dataset_dep, n_in=window_size, dropnan=False)
                 x_real = x_real.drop(columns=['Security_Index(t-%s)' % (i) for i in range(window_size, 0, -1)])
                 x_real = x_real.iloc[-1, :].values
                 x_real = x_real.reshape(1, -1)
@@ -483,10 +482,10 @@ def build_and_train_dependability(horizon_param, project_param, regressor_param,
     # If the model will return also ground truth values
     if ground_truth_param == 'yes':
         # Fill dataframe with ground thruth
-        for intermediate_horizon in range(0, len(dataset['Security_Index'])):
+        for intermediate_horizon in range(0, len(dataset_dep['Security_Index'])):
             temp_dict = {
                 'version': intermediate_horizon + 1,
-                'value': float(dataset['Security_Index'][intermediate_horizon])
+                'value': float(dataset_dep['Security_Index'][intermediate_horizon])
             }
             list_ground_truth.append(temp_dict)
         # Fill results dictionary with ground thruth
@@ -521,7 +520,7 @@ def build_and_train_energy(horizon_param, project_param, regressor_param, ground
     window_size = 2
 
     # Read dataset
-    dataset = pd.read_csv('data/%s.csv' % project_param, sep=";", usecols=metrics_energy)
+    dataset_en = pd.read_csv('data/%s.csv' % project_param, sep=";", usecols=metrics_energy)
     # dataset = read_from_database('energy_dummy', 'localhost', 27017, project_param, {'_id': 0, 'cpu_cycles': 1, 'cache_references': 1, 'energy_CPU(J)': 1})
 
     # Initialise variables
@@ -542,11 +541,11 @@ def build_and_train_energy(horizon_param, project_param, regressor_param, ground
         # Test model
         if test_param == 'yes':
             # Split data to training/test set to test model
-            y_array = dataset['energy_CPU(J)'][0:-horizon_param]
+            y_array = dataset_en['energy_CPU(J)'][0:-horizon_param]
         # Deploy model
         else:
             # Set Y to to deploy model for real forecasts
-            y_array = dataset['energy_CPU(J)']
+            y_array = dataset_en['energy_CPU(J)']
 
         # Make forecasts for training/test set
         regressor = create_regressor(regressor_param, None, y_array)
@@ -568,7 +567,7 @@ def build_and_train_energy(horizon_param, project_param, regressor_param, ground
                 print('=========================== Horizon: %s ============================' % intermediate_horizon)
 
             # Add time-shifted prior and future period
-            data = series_to_supervised(dataset, n_in=window_size)
+            data = series_to_supervised(dataset_en, n_in=window_size)
 
             # Append dependend variable column with value equal to energy_CPU(J) of the target horizon's version
             data['forecasted_energy_CPU(J)'] = data['energy_CPU(J)(t)'].shift(-intermediate_horizon)
@@ -584,7 +583,7 @@ def build_and_train_energy(horizon_param, project_param, regressor_param, ground
             # Test model
             if test_param == 'yes':
                 # Assign version counter
-                version_counter = len(dataset)-(horizon_param-intermediate_horizon)
+                version_counter = len(dataset_en)-(horizon_param-intermediate_horizon)
                 # Split data to training/test set to test model
                 x_train, x_test, y_train, y_test = train_test_split(x_array, y_array, test_size=horizon_param, random_state=0, shuffle=False)
                 # Make forecasts for training/test set
@@ -593,9 +592,9 @@ def build_and_train_energy(horizon_param, project_param, regressor_param, ground
             # Deploy model
             else:
                 # Assign version counter
-                version_counter = len(dataset)+intermediate_horizon
+                version_counter = len(dataset_en)+intermediate_horizon
                 # Define X to to deploy model for real forecasts
-                x_real = series_to_supervised(dataset, n_in=window_size, dropnan=False)
+                x_real = series_to_supervised(dataset_en, n_in=window_size, dropnan=False)
                 x_real = x_real.drop(columns=['energy_CPU(J)(t-%s)' % (i) for i in range(window_size, 0, -1)])
                 x_real = x_real.iloc[-1, :].values
                 x_real = x_real.reshape(1, -1)
@@ -616,10 +615,10 @@ def build_and_train_energy(horizon_param, project_param, regressor_param, ground
     # If the model will return also ground truth values
     if ground_truth_param == 'yes':
         # Fill dataframe with ground thruth
-        for intermediate_horizon in range(0, len(dataset['energy_CPU(J)'])):
+        for intermediate_horizon in range(0, len(dataset_en['energy_CPU(J)'])):
             temp_dict = {
                 'version': intermediate_horizon + 1,
-                'value': float(dataset['energy_CPU(J)'][intermediate_horizon])
+                'value': float(dataset_en['energy_CPU(J)'][intermediate_horizon])
             }
             list_ground_truth.append(temp_dict)
         # Fill results dictionary with ground thruth
