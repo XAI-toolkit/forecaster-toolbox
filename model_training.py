@@ -138,8 +138,8 @@ def cross_validation_best(pipes, x_array, y_array):
 
     if debug:
         print('=================== TimeSeriesSplit Validation ====================')
-        print(' - Best Regressor: ', best_regressor)
-        print(' - Best Score: ', best_score)
+        print(' - Best Regressor: ', best_regressor['regressor'])
+        print(' - Best R2 Score: ', best_score)
 
     return best_regressor
 
