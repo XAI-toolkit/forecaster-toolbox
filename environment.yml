@@ -11,5 +11,7 @@ dependencies:
   - pandas
   - pmdarima
   - pymongo
+  - pytest
+  - requests
   - scikit-learn
   - waitress
