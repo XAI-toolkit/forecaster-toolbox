@@ -4,6 +4,7 @@ WORKDIR /home/forecaster-toolbox
 
 COPY environment.yml ./
 COPY data ./data
+COPY tests ./
 COPY forecaster_service.py ./
 COPY model_training.py ./
 COPY utils.py ./
