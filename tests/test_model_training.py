@@ -3,27 +3,18 @@
 @author: tsoukj
 """
 
-import os
-import numpy as np
-import pandas as pd
-from sklearn.model_selection import GridSearchCV, TimeSeriesSplit, cross_validate, train_test_split
+from sklearn.model_selection import GridSearchCV, TimeSeriesSplit, cross_validate
 from sklearn.linear_model import LinearRegression, Lasso, Ridge
 from sklearn.svm import SVR
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import make_scorer
-from sklearn.utils.testing import ignore_warnings
-from sklearn.exceptions import ConvergenceWarning
 from pmdarima import auto_arima
 from pmdarima import ARIMA
 
-def test_grid_search_best_lasso():
-    x_array = np.arange(150).reshape(50,3)
-    y_array = np.arange(50).reshape(50,1)
-
+def test_grid_search_best_lasso(x_array_input, y_array_input):
     # Chosing hyperparameters based on best score during TimeSeriesSplit Validation
-    splits = int(len(x_array) / 30) if len(x_array) >= 60 else 2
+    splits = int(len(x_array_input) / 30) if len(x_array_input) >= 60 else 2
     tscv = TimeSeriesSplit(n_splits=splits)
 
     regressor = Lasso()
@@ -32,19 +23,16 @@ def test_grid_search_best_lasso():
 
     # Perform Grid Search
     grid_search = GridSearchCV(pipeline, parameters, cv=tscv)
-    grid_search = grid_search.fit(x_array, y_array.ravel())
+    grid_search = grid_search.fit(x_array_input, y_array_input.ravel())
 
     # best_accuracy = grid_search.best_score_
     best_parameters = grid_search.best_params_
 
     assert 'regressor__alpha' in best_parameters
 
-def test_grid_search_best_ridge():
-    x_array = np.arange(150).reshape(50,3)
-    y_array = np.arange(50).reshape(50,1)
-
+def test_grid_search_best_ridge(x_array_input, y_array_input):
     # Chosing hyperparameters based on best score during TimeSeriesSplit Validation
-    splits = int(len(x_array) / 30) if len(x_array) >= 60 else 2
+    splits = int(len(x_array_input) / 30) if len(x_array_input) >= 60 else 2
     tscv = TimeSeriesSplit(n_splits=splits)
 
     regressor = Ridge()
@@ -53,19 +41,16 @@ def test_grid_search_best_ridge():
 
     # Perform Grid Search
     grid_search = GridSearchCV(pipeline, parameters, cv=tscv)
-    grid_search = grid_search.fit(x_array, y_array.ravel())
+    grid_search = grid_search.fit(x_array_input, y_array_input.ravel())
 
     # best_accuracy = grid_search.best_score_
     best_parameters = grid_search.best_params_
 
     assert 'regressor__alpha' in best_parameters
     
-def test_grid_search_best_svr_linear():
-    x_array = np.arange(150).reshape(50,3)
-    y_array = np.arange(50).reshape(50,1)
-
+def test_grid_search_best_svr_linear(x_array_input, y_array_input):
     # Chosing hyperparameters based on best score during TimeSeriesSplit Validation
-    splits = int(len(x_array) / 30) if len(x_array) >= 60 else 2
+    splits = int(len(x_array_input) / 30) if len(x_array_input) >= 60 else 2
     tscv = TimeSeriesSplit(n_splits=splits)
     scaler = StandardScaler()
     
@@ -75,19 +60,16 @@ def test_grid_search_best_svr_linear():
 
     # Perform Grid Search
     grid_search = GridSearchCV(pipeline, parameters, cv=tscv)
-    grid_search = grid_search.fit(x_array, y_array.ravel())
+    grid_search = grid_search.fit(x_array_input, y_array_input.ravel())
 
     # best_accuracy = grid_search.best_score_
     best_parameters = grid_search.best_params_
 
     assert 'regressor__C' in best_parameters
 
-def test_grid_search_best_svr_rbf():
-    x_array = np.arange(150).reshape(50,3)
-    y_array = np.arange(50).reshape(50,1)
-
+def test_grid_search_best_svr_rbf(x_array_input, y_array_input):
     # Chosing hyperparameters based on best score during TimeSeriesSplit Validation
-    splits = int(len(x_array) / 30) if len(x_array) >= 60 else 2
+    splits = int(len(x_array_input) / 30) if len(x_array_input) >= 60 else 2
     tscv = TimeSeriesSplit(n_splits=splits)
     scaler = StandardScaler()
     
@@ -97,19 +79,16 @@ def test_grid_search_best_svr_rbf():
 
     # Perform Grid Search
     grid_search = GridSearchCV(pipeline, parameters, cv=tscv)
-    grid_search = grid_search.fit(x_array, y_array.ravel())
+    grid_search = grid_search.fit(x_array_input, y_array_input.ravel())
 
     # best_accuracy = grid_search.best_score_
     best_parameters = grid_search.best_params_
 
     assert 'regressor__C' and 'regressor__gamma' in best_parameters
 
-def test_grid_search_best_random_forest():
-    x_array = np.arange(150).reshape(50,3)
-    y_array = np.arange(50).reshape(50,1)
-
+def test_grid_search_best_random_forest(x_array_input, y_array_input):
     # Chosing hyperparameters based on best score during TimeSeriesSplit Validation
-    splits = int(len(x_array) / 30) if len(x_array) >= 60 else 2
+    splits = int(len(x_array_input) / 30) if len(x_array_input) >= 60 else 2
     tscv = TimeSeriesSplit(n_splits=splits)
     
     regressor = RandomForestRegressor()
@@ -118,28 +97,24 @@ def test_grid_search_best_random_forest():
 
     # Perform Grid Search
     grid_search = GridSearchCV(pipeline, parameters, cv=tscv)
-    grid_search = grid_search.fit(x_array, y_array.ravel())
+    grid_search = grid_search.fit(x_array_input, y_array_input.ravel())
 
     # best_accuracy = grid_search.best_score_
     best_parameters = grid_search.best_params_
 
     assert 'regressor__n_estimators' and 'regressor__max_depth' in best_parameters
 
-def test_grid_search_best_arima():
-    y_array = np.ones(100)
-
-    stepwise_model = auto_arima(y_array, m=1, trace=False, error_action='ignore', suppress_warnings=True, stepwise=True)
+def test_grid_search_best_arima(y_array_input_arima):
+    stepwise_model = auto_arima(y_array_input_arima, m=1, trace=False, error_action='ignore', suppress_warnings=True, stepwise=True)
 
     assert isinstance(stepwise_model, ARIMA)
 
-def test_cross_validation_best():
+def test_cross_validation_best(x_array_input, y_array_input):
     scaler = StandardScaler()
     pipes = pipes = [Pipeline([('regressor', LinearRegression())]), Pipeline([('regressor', Lasso())]), Pipeline([('regressor', Ridge())]), Pipeline([('scaler', scaler), ('regressor', SVR(kernel='linear'))]), Pipeline([('scaler', scaler), ('regressor', SVR(kernel='rbf'))]), Pipeline([('regressor', RandomForestRegressor())])]
-    x_array = np.arange(150).reshape(50,3)
-    y_array = np.arange(50).reshape(50,1)
 
     # Chosing regressor based on best score during TimeSeriesSplit Validation
-    splits = int(len(x_array) / 30) if len(x_array) >= 60 else 2
+    splits = int(len(x_array_input) / 30) if len(x_array_input) >= 60 else 2
     tscv = TimeSeriesSplit(n_splits=splits)
 
     # Scores that will be computed during TimeSeriesSplit Validation
@@ -149,10 +124,9 @@ def test_cross_validation_best():
     best_score = float('-inf')
     best_regressor = None
     for pipe in pipes:
-        scores = cross_validate(estimator=pipe, X=x_array, y=y_array.ravel(), scoring=scorer, cv=tscv, return_train_score=False)
+        scores = cross_validate(estimator=pipe, X=x_array_input, y=y_array_input.ravel(), scoring=scorer, cv=tscv, return_train_score=False)
         if scores['test_r2'].mean() > best_score:
             best_score = scores['test_r2'].mean()
             best_regressor = pipe
 
-#    print(best_regressor['regressor'])
     assert best_regressor['regressor'] is not None
