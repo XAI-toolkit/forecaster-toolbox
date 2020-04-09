@@ -139,6 +139,16 @@ This command will start the Waitress server locally on port 5000 and store the r
 
 **Warning**: The Waitress mode is higly recommended in real production environments, since it supports scaling and multiple-request handling features.
 
+## Run Tests
+
+A series of dedicated tests have been developed using the [pytest](https://docs.pytest.org/en/latest/) framework in order to ensure the proper execution of the Forecasting Toolbox. Once the server is installed, the user can run the testing suite by opening a new command promt inside the active Conda or Container environment and executing the following command:
+
+```bash
+pytest -v
+```
+
+A list of results will start popping on the command prompt, informing the user whether a test has PASSED or FAILED.
+
 ## Usage
 
 ### Example
