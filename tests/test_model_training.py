@@ -14,7 +14,7 @@ def test_grid_search_best_lasso(x_array_input, y_array_input):
 
 def test_grid_search_best_ridge(x_array_input, y_array_input):
     assert 'regressor__alpha' in grid_search_best('ridge', x_array_input, y_array_input)
-    
+
 def test_grid_search_best_svr_linear(x_array_input, y_array_input):
     assert 'regressor__C' in grid_search_best('svr_linear', x_array_input, y_array_input)
 
