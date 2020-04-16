@@ -7,6 +7,11 @@ import pytest
 import numpy as np
 import pandas as pd
 from bson import ObjectId
+from sklearn.linear_model import LinearRegression, Lasso, Ridge
+from sklearn.svm import SVR
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
 @pytest.fixture
 def x_vector_input():
@@ -49,6 +54,12 @@ def x_dataframe_output():
     }
     return pd.DataFrame(x_object)
 
+@pytest.fixture
+def pipe_input():
+    scaler = StandardScaler()
+    pipes = [Pipeline([('regressor', LinearRegression())]), Pipeline([('regressor', Lasso())]), Pipeline([('regressor', Ridge())]), Pipeline([('scaler', scaler), ('regressor', SVR(kernel='linear'))]), Pipeline([('scaler', scaler), ('regressor', SVR(kernel='rbf'))]), Pipeline([('regressor', RandomForestRegressor())])]
+    return pipes
+    
 @pytest.fixture
 def dict_oid_input():
     dict_oid = {'key': ObjectId('582431a6a377f26970c543b3')}
