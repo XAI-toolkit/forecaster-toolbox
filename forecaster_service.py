@@ -43,7 +43,7 @@ def td_forecasting(horizon_param_td=None, project_param_td=None, regressor_param
 
     # If required parameters are missing from URL
     if horizon_param_td is None or project_param_td is None or regressor_param_td is None or ground_truth_param_td is None or test_param_td is None:
-        return(unprocessable_entity())
+        return unprocessable_entity()
     else:
         # Call build_and_train() function and retrieve forecasts
         results = build_and_train_td(horizon_param_td, project_param_td, regressor_param_td, ground_truth_param_td, test_param_td)
@@ -89,7 +89,7 @@ def dependability_forecasting(horizon_param_dep=None, project_param_dep=None, re
  
     # If required parameters are missing from URL
     if horizon_param_dep is None or project_param_dep is None or regressor_param_dep is None or ground_truth_param_dep is None or test_param_dep is None:
-        return(unprocessable_entity())
+        return unprocessable_entity()
     else:
         # Call build_and_train() function and retrieve forecasts
         results = build_and_train_dependability(horizon_param_dep, project_param_dep, regressor_param_dep, ground_truth_param_dep, test_param_dep)
@@ -135,7 +135,7 @@ def energy_forecasting(horizon_param_en=None, project_param_en=None, regressor_p
 
     # If required parameters are missing from URL
     if horizon_param_en is None or project_param_en is None or regressor_param_en is None or ground_truth_param_en is None or test_param_en is None:
-        return(unprocessable_entity())
+        return unprocessable_entity()
     else:
         # Call build_and_train() function and retrieve forecasts
         results = build_and_train_energy(horizon_param_en, project_param_en, regressor_param_en, ground_truth_param_en, test_param_en)
