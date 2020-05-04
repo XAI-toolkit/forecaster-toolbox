@@ -167,7 +167,7 @@ def bad_request(error=None):
     resp = jsonify(message)
     resp.status_code = 400
 
-    return(resp)
+    return resp
 @app.errorhandler(422)
 def unprocessable_entity(error=None):
     message = {
@@ -176,6 +176,16 @@ def unprocessable_entity(error=None):
     }
     resp = jsonify(message)
     resp.status_code = 400
+
+    return resp
+@app.errorhandler(500)
+def internal_server_error(error=None):
+    message = {
+        'status': 500,
+        'message': 'The server encountered an internal error and was unable to complete your request.',
+    }
+    resp = jsonify(message)
+    resp.status_code = 500
 
     return resp
 
