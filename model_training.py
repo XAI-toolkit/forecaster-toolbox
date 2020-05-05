@@ -163,70 +163,74 @@ def create_regressor(reg_type, x_array, y_array):
     scaler = StandardScaler()
 
     # Create the regressor model
-    if reg_type == 'mlr':
-        # Fitting Multiple Linear Regression to the Training set
-        regressor = LinearRegression()
-        pipeline = Pipeline([('regressor', regressor)])
-        pipeline.fit(x_array, y_array.ravel())
-    elif reg_type == 'lasso':
-        # Fitting Lasso Regression to the Training set
-        best_parameters = grid_search_best('lasso', x_array, y_array)
-        regressor = Lasso(alpha=best_parameters['regressor__alpha'])
-        pipeline = Pipeline([('regressor', regressor)])
-        pipeline.fit(x_array, y_array.ravel())
-    elif reg_type == 'ridge':
-        # Fitting Ridge Regression to the Training set
-        best_parameters = grid_search_best('ridge', x_array, y_array)
-        regressor = Ridge(alpha=best_parameters['regressor__alpha'])
-        pipeline = Pipeline([('regressor', regressor)])
-        pipeline.fit(x_array, y_array.ravel())
-    elif reg_type == 'svr_linear':
-        # Fitting linear SVR to the dataset
-        best_parameters = grid_search_best('svr_linear', x_array, y_array)
-        regressor = SVR(kernel='linear', C=best_parameters['regressor__C'])
-        pipeline = Pipeline([('scaler', scaler), ('regressor', regressor)])
-        pipeline.fit(x_array, y_array.ravel())
-    elif reg_type == 'svr_rbf':
-        # Fitting SVR to the dataset
-        best_parameters = grid_search_best('svr_rbf', x_array, y_array)
-        regressor = SVR(kernel='rbf', gamma=best_parameters['regressor__gamma'], C=best_parameters['regressor__C'])
-        pipeline = Pipeline([('scaler', scaler), ('regressor', regressor)])
-        pipeline.fit(x_array, y_array.ravel())
-    elif reg_type == 'random_forest':
-        # Fitting Random Forest Regression to the dataset
-        best_parameters = grid_search_best('random_forest', x_array, y_array)
-        regressor = RandomForestRegressor(n_estimators=best_parameters['regressor__n_estimators'], max_depth=best_parameters['regressor__max_depth'], random_state=0)
-        pipeline = Pipeline([('regressor', regressor)])
-        pipeline.fit(x_array, y_array.ravel())
-    elif reg_type == 'arima':
-        # Fitting ARIMA Regression to the dataset
-        regressor = arima_search_best(y_array)
-        pipeline = regressor
-        pipeline.fit(y_array)
-    elif reg_type == 'auto':
-        # Fitting Multiple Linear Regression to the Training set
-        regressor_linear = LinearRegression()
-        # Fitting Lasso Regression to the Training set
-        best_parameters = grid_search_best('lasso', x_array, y_array)
-        regressor_lasso = Lasso(alpha=best_parameters['regressor__alpha'])
-        # Fitting Ridge Regression to the Training set
-        best_parameters = grid_search_best('ridge', x_array, y_array)
-        regressor_ridge = Ridge(alpha=best_parameters['regressor__alpha'])
-        # Fitting linear SVR to the dataset
-        best_parameters = grid_search_best('svr_linear', x_array, y_array)
-        regressor_svr_linear = SVR(kernel='linear', C=best_parameters['regressor__C'])
-        # Fitting SVR to the dataset
-        best_parameters = grid_search_best('svr_rbf', x_array, y_array)
-        regressor_svr_rbf = SVR(kernel='rbf', gamma=best_parameters['regressor__gamma'], C=best_parameters['regressor__C'])
-        # Fitting Random Forest Regression to the dataset
-        best_parameters = grid_search_best('random_forest', x_array, y_array)
-        regressor_random_forest = RandomForestRegressor(n_estimators=best_parameters['regressor__n_estimators'], max_depth=best_parameters['regressor__max_depth'], random_state=0)
-        # Perform TimeSeriesSplit Validation and return best model
-        pipes = [Pipeline([('regressor', regressor_linear)]), Pipeline([('regressor', regressor_lasso)]), Pipeline([('regressor', regressor_ridge)]), Pipeline([('scaler', scaler), ('regressor', regressor_svr_linear)]), Pipeline([('scaler', scaler), ('regressor', regressor_svr_rbf)]), Pipeline([('regressor', regressor_random_forest)])]
-        pipeline = cross_validation_best(pipes, x_array, y_array)
-        pipeline.fit(x_array, y_array.ravel())
-
-    return pipeline
+    try:
+        if reg_type == 'mlr':
+            # Fitting Multiple Linear Regression to the Training set
+            regressor = LinearRegression()
+            pipeline = Pipeline([('regressor', regressor)])
+            pipeline.fit(x_array, y_array.ravel())
+        elif reg_type == 'lasso':
+            # Fitting Lasso Regression to the Training set
+            best_parameters = grid_search_best('lasso', x_array, y_array)
+            regressor = Lasso(alpha=best_parameters['regressor__alpha'])
+            pipeline = Pipeline([('regressor', regressor)])
+            pipeline.fit(x_array, y_array.ravel())
+        elif reg_type == 'ridge':
+            # Fitting Ridge Regression to the Training set
+            best_parameters = grid_search_best('ridge', x_array, y_array)
+            regressor = Ridge(alpha=best_parameters['regressor__alpha'])
+            pipeline = Pipeline([('regressor', regressor)])
+            pipeline.fit(x_array, y_array.ravel())
+        elif reg_type == 'svr_linear':
+            # Fitting linear SVR to the dataset
+            best_parameters = grid_search_best('svr_linear', x_array, y_array)
+            regressor = SVR(kernel='linear', C=best_parameters['regressor__C'])
+            pipeline = Pipeline([('scaler', scaler), ('regressor', regressor)])
+            pipeline.fit(x_array, y_array.ravel())
+        elif reg_type == 'svr_rbf':
+            # Fitting SVR to the dataset
+            best_parameters = grid_search_best('svr_rbf', x_array, y_array)
+            regressor = SVR(kernel='rbf', gamma=best_parameters['regressor__gamma'], C=best_parameters['regressor__C'])
+            pipeline = Pipeline([('scaler', scaler), ('regressor', regressor)])
+            pipeline.fit(x_array, y_array.ravel())
+        elif reg_type == 'random_forest':
+            # Fitting Random Forest Regression to the dataset
+            best_parameters = grid_search_best('random_forest', x_array, y_array)
+            regressor = RandomForestRegressor(n_estimators=best_parameters['regressor__n_estimators'], max_depth=best_parameters['regressor__max_depth'], random_state=0)
+            pipeline = Pipeline([('regressor', regressor)])
+            pipeline.fit(x_array, y_array.ravel())
+        elif reg_type == 'arima':
+            # Fitting ARIMA Regression to the dataset
+            regressor = arima_search_best(y_array)
+            pipeline = regressor
+            pipeline.fit(y_array)
+        elif reg_type == 'auto':
+            # Fitting Multiple Linear Regression to the Training set
+            regressor_linear = LinearRegression()
+            # Fitting Lasso Regression to the Training set
+            best_parameters = grid_search_best('lasso', x_array, y_array)
+            regressor_lasso = Lasso(alpha=best_parameters['regressor__alpha'])
+            # Fitting Ridge Regression to the Training set
+            best_parameters = grid_search_best('ridge', x_array, y_array)
+            regressor_ridge = Ridge(alpha=best_parameters['regressor__alpha'])
+            # Fitting linear SVR to the dataset
+            best_parameters = grid_search_best('svr_linear', x_array, y_array)
+            regressor_svr_linear = SVR(kernel='linear', C=best_parameters['regressor__C'])
+            # Fitting SVR to the dataset
+            best_parameters = grid_search_best('svr_rbf', x_array, y_array)
+            regressor_svr_rbf = SVR(kernel='rbf', gamma=best_parameters['regressor__gamma'], C=best_parameters['regressor__C'])
+            # Fitting Random Forest Regression to the dataset
+            best_parameters = grid_search_best('random_forest', x_array, y_array)
+            regressor_random_forest = RandomForestRegressor(n_estimators=best_parameters['regressor__n_estimators'], max_depth=best_parameters['regressor__max_depth'], random_state=0)
+            # Perform TimeSeriesSplit Validation and return best model
+            pipes = [Pipeline([('regressor', regressor_linear)]), Pipeline([('regressor', regressor_lasso)]), Pipeline([('regressor', regressor_ridge)]), Pipeline([('scaler', scaler), ('regressor', regressor_svr_linear)]), Pipeline([('scaler', scaler), ('regressor', regressor_svr_rbf)]), Pipeline([('regressor', regressor_random_forest)])]
+            pipeline = cross_validation_best(pipes, x_array, y_array)
+            pipeline.fit(x_array, y_array.ravel())
+        return pipeline
+    except ValueError as e:
+        if debug:
+            print(e)
+        return -1
 
 #===============================================================================
 # build_and_train_td ()
@@ -283,6 +287,8 @@ def build_and_train_td(horizon_param, project_param, regressor_param, ground_tru
 
         # Make forecasts for training/test set
         regressor = create_regressor(regressor_param, None, y_array)
+        if regressor is -1:
+            return -1
         y_pred = regressor.predict(n_periods=horizon_param)
 
         # Fill dataframe with forecasts
@@ -322,6 +328,8 @@ def build_and_train_td(horizon_param, project_param, regressor_param, ground_tru
                 x_train, x_test, y_train, y_test = train_test_split(x_array, y_array, test_size=horizon_param, random_state=0, shuffle=False)
                 # Make forecasts for training/test set
                 regressor = create_regressor(regressor_param, x_train, y_train)
+                if regressor is -1:
+                    return -1
                 y_pred = regressor.predict(x_test)
             # Deploy model
             else:
@@ -334,6 +342,8 @@ def build_and_train_td(horizon_param, project_param, regressor_param, ground_tru
                 x_real = x_real.reshape(1, -1)
                 # Make real forecasts
                 regressor = create_regressor(regressor_param, x_array, y_array)
+                if regressor is -1:
+                    return -1
                 y_pred = regressor.predict(x_real)
 
             # Fill dataframe with forecasts
@@ -416,6 +426,8 @@ def build_and_train_dependability(horizon_param, project_param, regressor_param,
 
         # Make forecasts for training/test set
         regressor = create_regressor(regressor_param, None, y_array)
+        if regressor is -1:
+            return -1
         y_pred = regressor.predict(n_periods=horizon_param)
 
         # Fill dataframe with forecasts
@@ -455,6 +467,8 @@ def build_and_train_dependability(horizon_param, project_param, regressor_param,
                 x_train, x_test, y_train, y_test = train_test_split(x_array, y_array, test_size=horizon_param, random_state=0, shuffle=False)
                 # Make forecasts for training/test set
                 regressor = create_regressor(regressor_param, x_train, y_train)
+                if regressor is -1:
+                    return -1
                 y_pred = regressor.predict(x_test)
             # Deploy model
             else:
@@ -467,6 +481,8 @@ def build_and_train_dependability(horizon_param, project_param, regressor_param,
                 x_real = x_real.reshape(1, -1)
                 # Make real forecasts
                 regressor = create_regressor(regressor_param, x_array, y_array)
+                if regressor is -1:
+                    return -1
                 y_pred = regressor.predict(x_real)
 
             # Fill dataframe with forecasts
@@ -549,6 +565,8 @@ def build_and_train_energy(horizon_param, project_param, regressor_param, ground
 
         # Make forecasts for training/test set
         regressor = create_regressor(regressor_param, None, y_array)
+        if regressor is -1:
+            return -1
         y_pred = regressor.predict(n_periods=horizon_param)
 
         # Fill dataframe with forecasts
@@ -588,6 +606,8 @@ def build_and_train_energy(horizon_param, project_param, regressor_param, ground
                 x_train, x_test, y_train, y_test = train_test_split(x_array, y_array, test_size=horizon_param, random_state=0, shuffle=False)
                 # Make forecasts for training/test set
                 regressor = create_regressor(regressor_param, x_train, y_train)
+                if regressor is -1:
+                    return -1
                 y_pred = regressor.predict(x_test)
             # Deploy model
             else:
@@ -600,6 +620,8 @@ def build_and_train_energy(horizon_param, project_param, regressor_param, ground
                 x_real = x_real.reshape(1, -1)
                 # Make real forecasts
                 regressor = create_regressor(regressor_param, x_array, y_array)
+                if regressor is -1:
+                    return -1
                 y_pred = regressor.predict(x_real)
 
             # Fill dataframe with forecasts
