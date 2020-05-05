@@ -47,6 +47,8 @@ def td_forecasting(horizon_param_td=None, project_param_td=None, regressor_param
     else:
         # Call build_and_train() function and retrieve forecasts
         results = build_and_train_td(horizon_param_td, project_param_td, regressor_param_td, ground_truth_param_td, test_param_td)
+        if results is -1:
+            return internal_server_error('%s steps-ahead forecasting cannot provide reliable results for this project. Please reduce forecasting horizon.' % horizon_param_td)
 
         # Add to database
         import_to_database(results, 'td_forecasts')
@@ -93,6 +95,8 @@ def dependability_forecasting(horizon_param_dep=None, project_param_dep=None, re
     else:
         # Call build_and_train() function and retrieve forecasts
         results = build_and_train_dependability(horizon_param_dep, project_param_dep, regressor_param_dep, ground_truth_param_dep, test_param_dep)
+        if results is -1:
+            return internal_server_error('%s steps-ahead forecasting cannot provide reliable results for this project. Please reduce forecasting horizon.' % horizon_param_dep)
 
         # Add to database
         import_to_database(results, 'dependability_forecasts')
@@ -139,6 +143,8 @@ def energy_forecasting(horizon_param_en=None, project_param_en=None, regressor_p
     else:
         # Call build_and_train() function and retrieve forecasts
         results = build_and_train_energy(horizon_param_en, project_param_en, regressor_param_en, ground_truth_param_en, test_param_en)
+        if results is -1:
+            return internal_server_error('%s steps-ahead forecasting cannot provide reliable results for this project. Please reduce forecasting horizon.' % horizon_param_en)
 
         # Add to database
         import_to_database(results, 'energy_forecasts')
@@ -182,7 +188,7 @@ def unprocessable_entity(error=None):
 def internal_server_error(error=None):
     message = {
         'status': 500,
-        'message': 'The server encountered an internal error and was unable to complete your request.',
+        'message': 'The server encountered an internal error and was unable to complete your request. ' + error,
     }
     resp = jsonify(message)
     resp.status_code = 500
