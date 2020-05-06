@@ -155,6 +155,6 @@ A list of results will start popping on the command prompt, informing the user w
 
 Once the server is running, open your web browser and navigate to the following URL:
 
-http://127.0.0.1:5000/ForecasterToolbox/TDForecasting?horizon=5&project=apache_kafka_measures&regressor=ridge&ground_truth=yes&test=no
+http://127.0.0.1:5000/ForecasterToolbox/TDForecasting?horizon=5&project=apache_kafka_measures&regressor=ridge&ground_truth=no&test=no
 
 You will get a JSON response containing TD forecasts of a sample application (Apache Kafka) for an horizon of 5 versions ahead, using the Ridge regressor model.
