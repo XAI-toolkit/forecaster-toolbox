@@ -15,7 +15,7 @@ from sklearn.metrics import make_scorer
 from sklearn.utils.testing import ignore_warnings
 from sklearn.exceptions import ConvergenceWarning
 from pmdarima import auto_arima
-from utils import mean_absolute_percentage_error, root_mean_squared_error, series_to_supervised
+from utils import mean_absolute_percentage_error, root_mean_squared_error, series_to_supervised, read_from_td_toolbox_api, read_from_dependability_toolbox_api
 
 debug = bool(os.environ.get('DEBUG'))
 
@@ -256,10 +256,13 @@ def build_and_train_td(horizon_param, project_param, regressor_param, ground_tru
     window_size = 2
 
     # Read dataset
-    dataset_td = pd.read_csv('data/%s.csv' % project_param, sep=";", usecols=metrics_td)
-    # dataset = read_from_database('td_dummy', 'localhost', 27017, project_param, {'_id': 0, 'bugs': 1, 'vulnerabilities': 1, 'code_smells': 1, 'sqale_index': 1, 'reliability_remediation_effort': 1, 'security_remediation_effort': 1})
-    dataset_td['total_principal'] = dataset_td['reliability_remediation_effort'] + dataset_td['security_remediation_effort'] + dataset_td['sqale_index']
-    dataset_td = dataset_td.drop(columns=['sqale_index', 'reliability_remediation_effort', 'security_remediation_effort'])
+    if project_param == 'HolisunArassistance' or project_param == 'Neurasmus' or project_param == 'Airbus':
+        dataset_td = read_from_td_toolbox_api(project_param)
+    else:
+        dataset_td = pd.read_csv('data/%s.csv' % project_param, sep=";", usecols=metrics_td)
+        # dataset = read_from_database('td_dummy', 'localhost', 27017, project_param, {'_id': 0, 'bugs': 1, 'vulnerabilities': 1, 'code_smells': 1, 'sqale_index': 1, 'reliability_remediation_effort': 1, 'security_remediation_effort': 1})
+        dataset_td['total_principal'] = dataset_td['reliability_remediation_effort'] + dataset_td['security_remediation_effort'] + dataset_td['sqale_index']
+        dataset_td = dataset_td.drop(columns=['sqale_index', 'reliability_remediation_effort', 'security_remediation_effort'])
 
     # Initialise variables
     dict_result = {
@@ -397,8 +400,11 @@ def build_and_train_dependability(horizon_param, project_param, regressor_param,
     window_size = 2
 
     # Read dataset
-    dataset_dep = pd.read_csv('data/%s.csv' % project_param, sep=";", usecols=metrics_dependability)
-    # dataset = read_from_database('dependability_dummy', 'localhost', 27017, project_param, {'_id': 0, 'Resource_Handling': 1, 'Assignment': 1, 'Exception_Handling': 1, 'Misused_Functionality': 1, 'Security_Index': 1})
+    if project_param == 'HolisunArassistance' or project_param == 'Neurasmus' or project_param == 'Airbus':
+        dataset_dep = read_from_dependability_toolbox_api(project_param)
+    else:
+        dataset_dep = pd.read_csv('data/%s.csv' % project_param, sep=";", usecols=metrics_dependability)
+        # dataset = read_from_database('dependability_dummy', 'localhost', 27017, project_param, {'_id': 0, 'Resource_Handling': 1, 'Assignment': 1, 'Exception_Handling': 1, 'Misused_Functionality': 1, 'Security_Index': 1})
 
     # Initialise variables
     dict_result = {
