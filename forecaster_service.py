@@ -9,7 +9,7 @@ import os
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from waitress import serve
-from model_training import build_and_train_td, build_and_train_dependability, build_and_train_energy
+from model_training import build_and_train_td, build_and_train_dependability, build_and_train_energy, build_and_train_td_class_level
 from utils import import_to_database, objectid_to_string
 
 # Create the Flask app
@@ -53,6 +53,56 @@ def td_forecasting(horizon_param_td=None, project_param_td=None, regressor_param
         # Add to database
         import_to_database(results, 'td_forecasts')
         results = objectid_to_string(results)
+
+        # Compose and jsonify respond
+        message = {
+            'status': 200,
+            'message': 'The request was fulfilled.',
+            'results': results,
+    	}
+        resp = jsonify(message)
+        resp.status_code = 200
+
+        return resp
+
+#===============================================================================
+# td_class_level_forecasting ()
+#===============================================================================
+@app.route('/ForecasterToolbox/TDClassLevelForecasting', methods=['GET'])
+def td_class_level_forecasting(horizon_param_td=None, project_param_td=None, project_classes_param_td=None, regressor_param_td=None, ground_truth_param_td=None, test_param_td=None):
+    """
+    API Call to TDForecasting service
+    Arguments:
+        horizon_param_td: Required (sent as URL query parameter from API Call)
+        project_param_td: Required (sent as URL query parameter from API Call)
+        project_classes_param_td: Required (sent as URL query parameter from API Call)
+        regressor_param_td: Optional (sent as URL query parameter from API Call)
+        ground_truth_param_td: Optional (sent as URL query parameter from API Call)
+        test_param_td: Optional (sent as URL query parameter from API Call)
+    Returns:
+        A JSON containing the forecasting results, status code and a message.
+    """
+
+    # Parse URL-encoded parameters
+    horizon_param_td = request.args.get('horizon', type=int) # Required: if key doesn't exist, returns None
+    project_param_td = request.args.get('project', type=str) # Required: if key doesn't exist, returns None
+    project_classes_param_td = request.args.get('project_classes', type=int) # Required: if key doesn't exist, returns None
+    regressor_param_td = request.args.get('regressor', default='auto', type=str) # Optional: if key doesn't exist, returns auto
+    ground_truth_param_td = request.args.get('ground_truth', default='no', type=str) # Optional: if key doesn't exist, returns no
+    test_param_td = request.args.get('test', default='no', type=str) # Optional: if key doesn't exist, returns no
+
+    # If required parameters are missing from URL
+    if horizon_param_td is None or project_param_td is None or project_classes_param_td is None or regressor_param_td is None or ground_truth_param_td is None or test_param_td is None:
+        return unprocessable_entity()
+    else:        
+        # Call build_and_train_td_class_level() function and retrieve forecasts
+        results = build_and_train_td_class_level(horizon_param_td, project_param_td, project_classes_param_td, regressor_param_td, ground_truth_param_td, test_param_td)
+        if results is -1:
+            return internal_server_error('%s steps-ahead forecasting cannot provide reliable results for this project. Please reduce forecasting horizon.' % horizon_param_td)
+
+#        # Add to database
+#        import_to_database(results, 'td_forecasts')
+#        results = objectid_to_string(results)
 
         # Compose and jsonify respond
         message = {
