@@ -99,6 +99,8 @@ def td_class_level_forecasting(horizon_param_td=None, project_param_td=None, pro
         results = build_and_train_td_class_level(horizon_param_td, project_param_td, project_classes_param_td, regressor_param_td, ground_truth_param_td, test_param_td)
         if results is -1:
             return internal_server_error('%s steps-ahead forecasting cannot provide reliable results for this project. Please reduce forecasting horizon.' % horizon_param_td)
+        if results is -2:
+            return internal_server_error('Class-level analysis is currently unavailable for this project.')
 
 #        # Add to database
 #        import_to_database(results, 'td_forecasts')
