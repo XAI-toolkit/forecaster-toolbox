@@ -394,7 +394,12 @@ def build_and_train_td_class_level(horizon_param, project_param, project_classes
     """
 
     # Read class-level dataset
-    dataset_td_class = pd.read_csv('data/%s_class.csv' % project_param, sep=";")
+    try:
+        dataset_td_class = pd.read_csv('data/%s_class.csv' % project_param, sep=";")
+    except FileNotFoundError as e:
+        if debug:
+            print(e)
+        return -2
 
     # selecting indicators that will be used as model variables
     metrics_td = ['bugs', 'vulnerabilities', 'code_smells', 'total_principal']
