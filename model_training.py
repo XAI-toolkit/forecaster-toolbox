@@ -374,6 +374,250 @@ def build_and_train_td(horizon_param, project_param, regressor_param, ground_tru
     return dict_result
 
 #===============================================================================
+# build_and_train_td_class_level ()
+#===============================================================================
+def build_and_train_td_class_level(horizon_param, project_param, project_classes_param, regressor_param, ground_truth_param, test_param):
+    """
+    Build class-level TD forecasting models and return forecasts for an horizon specified by the user.
+    Arguments:
+        horizon_param: The forecasting horizon up to which forecasts will be produced.
+        project_param: The project for which the forecasts will be produced.
+        project_classes_param: The number of classes for which the forecasts will be produced.
+        regressor_param: The regressor models that will be used to produce forecasts.
+        ground_truth_param: If the model will return also ground truth values or not.
+        test_param: If the model will produce Train-Test or unseen forecasts
+    Returns:
+        A dictionary containing class-level forecasted values (and ground thruth
+        values if ground_truth_param is set to yes) of the selected project, for
+        a number of classes specified by the user and for each intermediate step
+        ahead up to the specified horizon.
+    """
+
+    # Read class-level dataset
+    try:
+        dataset_td_class = pd.read_csv('data/%s_class.csv' % project_param, sep=";")
+    except FileNotFoundError as e:
+        if debug:
+            print(e)
+        return -2
+
+    # selecting indicators that will be used as model variables
+    metrics_td = ['bugs', 'vulnerabilities', 'code_smells', 'total_principal']
+
+    # Select sliding window length
+    window_size = 2
+
+    # Compute change proneness and TD change proneness for each class
+    classes_change_metrics_df = pd.DataFrame()
+    for class_id in dataset_td_class['class_id'].unique().tolist():
+        # create temporary class dataframe
+        temp_class_df = dataset_td_class[dataset_td_class['class_id'] == class_id]
+
+        temp_class_metr_dict = {}
+        temp_class_name = temp_class_df.class_name[temp_class_df.class_name.index[0]]
+        temp_class_metr_dict['class_id'] = class_id
+        temp_class_metr_dict['class_name'] = temp_class_name
+        temp_class_metr_dict['versions'] = temp_class_df.shape[0]
+        temp_class_metr_dict['td_of_last_version'] = temp_class_df.total_principal[temp_class_df.total_principal.index[-1]]
+
+        # compare ncloc across versions
+        temp_class_df['change_proneness'] = temp_class_df.ncloc == temp_class_df.ncloc.shift()
+        temp_class_df['change_proneness'] = [1 if i==False else 0 for i in temp_class_df.change_proneness]
+
+        # retrieve number of changes in LOC
+        class_df_changes = temp_class_df['change_proneness'].sum()
+        class_df_CP = (class_df_changes/temp_class_df.shape[0])
+        temp_class_metr_dict['number_of_changes'] = class_df_changes
+        temp_class_metr_dict['change_proneness_(CP)'] = class_df_CP
+
+        # compare total_principal across versions
+        temp_class_df['change_proneness_td'] = temp_class_df.total_principal == temp_class_df.total_principal.shift()
+        temp_class_df['change_proneness_td'] = [1 if i==False else 0 for i in temp_class_df.change_proneness_td]
+
+        # retrieve number of changes in TD
+        class_df_changes_td = temp_class_df['change_proneness_td'].sum()
+        class_df_CP_td = (class_df_changes_td/temp_class_df.shape[0])
+        temp_class_metr_dict['number_of_td_changes'] = class_df_changes_td
+        temp_class_metr_dict['change_proneness_td_(CP-TD)'] = class_df_CP_td
+
+        # retrieve average size of change in LOC
+        # calculate diff with previous row
+        temp_class_df['change_volume'] = temp_class_df['ncloc'].diff(periods=1)
+        temp_class_df['change_volume'].fillna(0,inplace=True)
+        class_df_ED_LOC = (temp_class_df['change_volume'].sum())/class_df_changes
+        temp_class_metr_dict['expected_size_change_(ED-LOC)'] = class_df_ED_LOC
+
+        # retrieve projected addition in TD
+        # sum changes
+        class_df_aggr_TD_chng = temp_class_df.loc[temp_class_df['change_volume']!=0,['total_principal']].sum()
+        temp_class_df['td_change_volume'] = temp_class_df['total_principal'].diff(periods=1)
+        temp_class_df['td_change_volume'].fillna(0,inplace=True)
+
+        # sum the td_change on
+        class_df_aggr_TD_chng = float(temp_class_df.loc[temp_class_df['change_proneness']==0,['td_change_volume']].sum())
+        class_df_ED_TD = class_df_aggr_TD_chng/class_df_changes
+        temp_class_metr_dict['expected_td_change_(ED-TD)'] = class_df_ED_TD
+
+        temp_class_metr_df = pd.DataFrame.from_records([temp_class_metr_dict], index='class_id', columns=temp_class_metr_dict.keys())
+        classes_change_metrics_df = classes_change_metrics_df.append(temp_class_metr_df)
+
+    # Sort classes by Change Proneness (CP)
+    classes_change_metrics_df.sort_values(by=['change_proneness_(CP)'], ascending=False, inplace=True)
+    
+    # Keep only first n classes, where n = project_classes_param
+    classes_change_metrics_df = classes_change_metrics_df.head(project_classes_param)
+
+    # Initialise variables
+    dict_result = {
+        'parameters': {
+            'project': project_param,
+            'classes': project_classes_param,
+            'horizon': horizon_param,
+            'regressor': regressor_param,
+            'ground_truth': ground_truth_param,
+            'test': test_param
+        }
+    }
+    list_forecasts = []
+    list_metrics = []
+    list_ground_truth = []
+
+    # Compute forecasts for each class
+    for index, class_instance in classes_change_metrics_df.iterrows():
+        if debug:
+            print('=========================== Class: %s ============================' % class_instance['class_name'])
+        temp_class_df = dataset_td_class.loc[dataset_td_class['class_id'] == index]
+        temp_class_df.reset_index(inplace=True, drop=True)
+        temp_class_df.set_index('date', inplace=True)
+
+        temp_dataset_td_class = temp_class_df[metrics_td]
+
+        # Fill list with metrics of classes
+        temp_metrics_dict = {
+            class_instance['class_name']: pd.DataFrame(class_instance).T.to_dict('records')[0]
+        }
+        list_metrics.append(temp_metrics_dict)
+
+        temp_list_forecasts = []
+
+        # Make forecasts using the ARIMA model
+        if regressor_param == 'arima':
+            # Test model
+            if test_param == 'yes':
+                # Split data to training/test set to test model
+                y_array = temp_dataset_td_class['total_principal'][0:-horizon_param]
+            # Deploy model
+            else:
+                # Set Y to to deploy model for real forecasts
+                y_array = temp_dataset_td_class['total_principal']
+
+            # Make forecasts for training/test set
+            regressor = create_regressor(regressor_param, None, y_array)
+            if regressor is -1:
+                return -1
+            y_pred = regressor.predict(n_periods=horizon_param)
+
+            # Fill list with forecasts
+            for intermediate_horizon in range(1, horizon_param+1):
+                version_counter = len(y_array)+intermediate_horizon
+                temp_forecasts_dict = {
+                    'version': version_counter,
+                    'value': float(y_pred[intermediate_horizon-1])
+                }
+                temp_list_forecasts.append(temp_forecasts_dict)
+
+        # Make forecasts using the Direct approach, i.e. train separate ML models for each forecasting horizon
+        else:
+            for intermediate_horizon in range(1, horizon_param+1):
+                if debug:
+                    print('=========================== Horizon: %s ============================' % intermediate_horizon)
+
+                # Add time-shifted prior and future period
+                data = series_to_supervised(temp_dataset_td_class, n_in=window_size)
+
+                # Append dependend variable column with value equal to total_principal of the target horizon's version
+                data['forecasted_total_principal'] = data['total_principal(t)'].shift(-intermediate_horizon)
+                data = data.drop(data.index[-intermediate_horizon:])
+
+                # Remove TD as independent variable
+                data = data.drop(columns=['total_principal(t-%s)' % (i) for i in range(window_size, 0, -1)]) 
+
+                # Define independent and dependent variables
+                x_array = data.iloc[:, data.columns != 'forecasted_total_principal'].values
+                y_array = data.iloc[:, data.columns == 'forecasted_total_principal'].values
+
+                # Test model
+                if test_param == 'yes':
+                    # Assign version counter
+                    version_counter = len(temp_dataset_td_class)-(horizon_param-intermediate_horizon)
+                    # Split data to training/test set to test model
+                    x_train, x_test, y_train, y_test = train_test_split(x_array, y_array, test_size=horizon_param, random_state=0, shuffle=False)
+                    # Make forecasts for training/test set
+                    regressor = create_regressor(regressor_param, x_train, y_train)
+                    if regressor is -1:
+                        return -1
+                    y_pred = regressor.predict(x_test)
+                # Deploy model
+                else:
+                    # Assign version counter
+                    version_counter = len(temp_dataset_td_class)+intermediate_horizon
+                    # Define X to to deploy model for real forecasts
+                    x_real = series_to_supervised(temp_dataset_td_class, n_in=window_size, dropnan=False)
+                    x_real = x_real.drop(columns=['total_principal(t-%s)' % (i) for i in range(window_size, 0, -1)])
+                    x_real = x_real.iloc[-1, :].values
+                    x_real = x_real.reshape(1, -1)
+                    # Make real forecasts
+                    regressor = create_regressor(regressor_param, x_array, y_array)
+                    if regressor is -1:
+                        return -1
+                    y_pred = regressor.predict(x_real)
+
+                # Fill list with forecasts
+                temp_forecasts_dict = {
+                    'version': version_counter,
+                    'value': float(y_pred[0])
+                }
+                temp_list_forecasts.append(temp_forecasts_dict)
+
+        # Fill list with forecasts
+        temp_class_forecasts_dict = {
+            class_instance['class_name']: temp_list_forecasts
+        }
+        list_forecasts.append(temp_class_forecasts_dict)
+
+        # If the model will return also ground truth values
+        if ground_truth_param == 'yes':
+            temp_list_ground_truth = []
+            # Fill dataframe with ground thruth
+            for intermediate_horizon in range(0, len(temp_dataset_td_class['total_principal'])):
+                temp_ground_truth_dict = {
+                    'version': intermediate_horizon + 1,
+                    'value': float(temp_dataset_td_class['total_principal'][intermediate_horizon])
+                }
+                temp_list_ground_truth.append(temp_ground_truth_dict)
+            # Fill list with classes
+            temp_ground_truth_dict = {
+                class_instance['class_name']: temp_list_ground_truth
+            }
+            list_ground_truth.append(temp_ground_truth_dict)
+
+    # Fill results dictionary with change proneness and TD change proneness for each class
+    dict_result['change_metrics'] = list_metrics
+
+    # Fill results dictionary with forecasts for each class
+    dict_result['forecasts'] = list_forecasts
+   
+    # If the model will return also ground truth values
+    if ground_truth_param == 'yes':
+        # Fill results dictionary with ground thruth
+        dict_result['ground_truth'] = list_ground_truth
+
+    if debug:
+        print(dict_result)
+
+    return dict_result
+
+#===============================================================================
 # build_and_train_dependability ()
 #===============================================================================
 def build_and_train_dependability(horizon_param, project_param, regressor_param, ground_truth_param, test_param):
