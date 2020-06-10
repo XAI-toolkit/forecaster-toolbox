@@ -187,15 +187,16 @@ def read_from_td_toolbox_api(project_param):
 
     try:
         # Call TD Toolbox API
-        td_toolbox_url = 'http://195.251.210.147:7070/principalSummary/version/search?projectID=%s&version=-1' % project_param
+        # td_toolbox_url = 'http://195.251.210.147:7070/principalSummary/version/search?projectID=%s&version=-1' % project_param
+        td_toolbox_url = 'http://195.251.210.147:9941/api/sdk4ed/certh/metrics/%s?limit=40' % project_param
         response = requests.get(td_toolbox_url)
         # Create dataframe with TD related data
-        td_data_df = pd.DataFrame.from_dict(response.json()['principalSummary'])
-        td_data_df.drop(['name', 'tdInCurrency', 'version', 'duplCode'], axis=1, inplace=True)
-        td_data_df.rename(columns={'tdInMinutes': 'total_principal', 'codeSmells': 'code_smells'}, inplace=True)
+        td_data_df = pd.DataFrame.from_dict(response.json())
+        td_data_df.drop(['version', 'ncloc'], axis=1, inplace=True)
+        td_data_df.rename(columns={'sqaleIndex': 'sqale_index', 'reliabilityRemediationEffort': 'reliability_remediation_effort', 'securityRemediationEffort': 'security_remediation_effort', 'codeSmells': 'code_smells'}, inplace=True)
         result = td_data_df
-    except Exception as e:
-        result = e
+    except requests.exceptions.RequestException as e:
+        result = -1
     if debug:
         print(result)
 
@@ -228,19 +229,22 @@ def read_from_dependability_toolbox_api(project_param):
     try:
         cursor_projects = collection.find(find_query).sort(sort_query)
 
-        # Create dataframe with Dependability related data
-        dependability_data_df = pd.DataFrame()
-        for project in cursor_projects:
-            temp_df = pd.DataFrame()
-            temp_df['Project_Name'] = [project['project_name']]
-            temp_df['date'] = [datetime.utcfromtimestamp(int(project['commit_timestamp'])//1000).strftime('%d/%m/%Y')]
-            for prop in project['report']['properties']['properties']:
-                temp_df[prop['name']] = [prop['measure']['value']]
-            temp_df['Security_Index'] = [project['report']['security_index']['eval']]
-            dependability_data_df = pd.concat([dependability_data_df, temp_df])
-        result = dependability_data_df
+        if cursor_projects.count() == 0:
+            result = -1
+        else:
+            # Create dataframe with Dependability related data
+            dependability_data_df = pd.DataFrame()
+            for project in cursor_projects:
+                temp_df = pd.DataFrame()
+                temp_df['Project_Name'] = [project['project_name']]
+                temp_df['date'] = [datetime.utcfromtimestamp(int(project['commit_timestamp'])//1000).strftime('%d/%m/%Y')]
+                for prop in project['report']['properties']['properties']:
+                    temp_df[prop['name']] = [prop['measure']['value']]
+                temp_df['Security_Index'] = [project['report']['security_index']['eval']]
+                dependability_data_df = pd.concat([dependability_data_df, temp_df])
+            result = dependability_data_df
     except Exception as e:
-        result = e
+        result = -1
     if debug:
         print(result)
 
