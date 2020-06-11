@@ -405,7 +405,7 @@ def build_and_train_dependability(horizon_param, project_param, regressor_param,
 
     # Read dataset
     if project_param == 'Neurasmus':
-        dataset_dep = read_from_dependability_toolbox_api('imd-technical-debt')
+        dataset_dep = read_from_dependability_toolbox_api('sdk4ed-healthcare-use-case')
 
         # in case Dependability API is not responding
         if not isinstance(dataset_dep, pd.DataFrame):

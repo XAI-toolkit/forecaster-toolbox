@@ -185,15 +185,19 @@ def read_from_td_toolbox_api(project_param):
         A dataframe with TD related data recovered from the TD Toolbox API.
     """
 
+    # selecting indicators that will be used as model variables
+    metrics_td = ['bugs', 'vulnerabilities', 'code_smells', 'sqale_index', 'reliability_remediation_effort', 'security_remediation_effort']
+
     try:
         # Call TD Toolbox API
-        # td_toolbox_url = 'http://195.251.210.147:7070/principalSummary/version/search?projectID=%s&version=-1' % project_param
         td_toolbox_url = 'http://195.251.210.147:9941/api/sdk4ed/certh/metrics/%s?limit=40' % project_param
         response = requests.get(td_toolbox_url)
         # Create dataframe with TD related data
         td_data_df = pd.DataFrame.from_dict(response.json())
-        td_data_df.drop(['version', 'ncloc'], axis=1, inplace=True)
+        # Rename columns
         td_data_df.rename(columns={'sqaleIndex': 'sqale_index', 'reliabilityRemediationEffort': 'reliability_remediation_effort', 'securityRemediationEffort': 'security_remediation_effort', 'codeSmells': 'code_smells'}, inplace=True)
+        # Drop columns not present in TD metrics list
+        td_data_df = td_data_df[td_data_df.columns.intersection(metrics_td)]
         result = td_data_df
     except requests.exceptions.RequestException as e:
         result = -1
@@ -214,21 +218,26 @@ def read_from_dependability_toolbox_api(project_param):
         A dataframe with Dependability related data recovered from the Dependability Toolbox API.
     """
 
+    # selecting indicators that will be used as model variables
+    metrics_dependability = ['Resource_Handling', 'Assignment', 'Exception_Handling', 'Misused_Functionality', 'Security_Index']
+
     # Set Dependability DB parameters
     mongo_host = '160.40.52.130'
     mongo_port = 27017
     db_name = 'dependabilityToolbox'
     collection_name = 'securityAssessment'
     find_query = {'project_name': project_param}
-    sort_query = [('commit_timestamp',-1)]
+    sort_query = [('commit_timestamp',1)]
 
     client = pymongo.MongoClient(mongo_host, mongo_port, serverSelectionTimeoutMS=2000)
     db_instance = client[db_name]
     collection = db_instance[collection_name]
 
     try:
+        # Execute search query
         cursor_projects = collection.find(find_query).sort(sort_query)
 
+        # If cursor does not contain results
         if cursor_projects.count() == 0:
             result = -1
         else:
@@ -236,12 +245,14 @@ def read_from_dependability_toolbox_api(project_param):
             dependability_data_df = pd.DataFrame()
             for project in cursor_projects:
                 temp_df = pd.DataFrame()
-                temp_df['Project_Name'] = [project['project_name']]
-                temp_df['date'] = [datetime.utcfromtimestamp(int(project['commit_timestamp'])//1000).strftime('%d/%m/%Y')]
                 for prop in project['report']['properties']['properties']:
-                    temp_df[prop['name']] = [prop['measure']['value']]
-                temp_df['Security_Index'] = [project['report']['security_index']['eval']]
+                    temp_df[prop['name']] = [prop['measure']['normValue']]
+                temp_df['Security_Index'] = [project['report']['tqi']['eval']]
                 dependability_data_df = pd.concat([dependability_data_df, temp_df])
+            # Drop columns not present in dependability metrics list
+            dependability_data_df = dependability_data_df[dependability_data_df.columns.intersection(metrics_dependability)]
+            # Reset index
+            dependability_data_df.reset_index(drop=True, inplace=True)
             result = dependability_data_df
     except Exception as e:
         result = -1
