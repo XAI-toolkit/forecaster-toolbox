@@ -7,9 +7,12 @@ import os
 import numpy as np
 import pandas as pd
 import pymongo
+import requests
+import re
 from math import sqrt
 from sklearn.metrics import mean_squared_error
 from bson import ObjectId
+from datetime import datetime
 
 debug = bool(os.environ.get('DEBUG', False))
 
@@ -166,6 +169,137 @@ def read_from_database(db_name, db_url, db_port, collection_name, fields):
         result = pd.DataFrame(list(collection.find({}, fields)))
     except Exception as e:
         result = e
+    if debug:
+        print(result)
+
+    return result
+
+#===============================================================================
+# read_from_td_toolbox_api ()
+#===============================================================================
+def read_from_td_toolbox_api(project_param):
+    """
+    Read TD related data from the TD Toolbox API.
+    Arguments:
+        project_param: The project for which the data will be fetched.
+    Returns:
+        A dataframe with TD related data recovered from the TD Toolbox API.
+    """
+
+    # selecting indicators that will be used as model variables
+    metrics_td = ['bugs', 'vulnerabilities', 'code_smells', 'sqale_index', 'reliability_remediation_effort', 'security_remediation_effort']
+
+    try:
+        # Call TD Toolbox API
+        td_toolbox_url = 'http://195.251.210.147:9941/api/sdk4ed/certh/metrics/%s?limit=40' % project_param
+        response = requests.get(td_toolbox_url)
+        # Create dataframe with TD related data
+        td_data_df = pd.DataFrame.from_dict(response.json())
+        # Rename columns
+        td_data_df.rename(columns={'sqaleIndex': 'sqale_index', 'reliabilityRemediationEffort': 'reliability_remediation_effort', 'securityRemediationEffort': 'security_remediation_effort', 'codeSmells': 'code_smells'}, inplace=True)
+        # Drop columns not present in TD metrics list
+        td_data_df = td_data_df[td_data_df.columns.intersection(metrics_td)]
+        result = td_data_df
+    except requests.exceptions.RequestException as e:
+        result = -1
+    if debug:
+        print(result)
+
+    return result
+
+#===============================================================================
+# read_from_dependability_toolbox_api ()
+#===============================================================================
+def read_from_dependability_toolbox_api(project_param):
+    """
+    Read Dependability related data from the Dependability Toolbox API.
+    Arguments:
+        project_param: The project for which the data will be fetched.
+    Returns:
+        A dataframe with Dependability related data recovered from the Dependability Toolbox API.
+    """
+
+    # selecting indicators that will be used as model variables
+    metrics_dependability = ['Resource_Handling', 'Assignment', 'Exception_Handling', 'Misused_Functionality', 'Security_Index']
+
+    # Set Dependability DB parameters
+    mongo_host = '160.40.52.130'
+    mongo_port = 27017
+    db_name = 'dependabilityToolbox'
+    collection_name = 'securityAssessment'
+    find_query = {'project_name': project_param}
+    sort_query = [('commit_timestamp',1)]
+
+    client = pymongo.MongoClient(mongo_host, mongo_port, serverSelectionTimeoutMS=2000)
+    db_instance = client[db_name]
+    collection = db_instance[collection_name]
+
+    try:
+        # Execute search query
+        cursor_projects = collection.find(find_query).sort(sort_query)
+
+        # If cursor does not contain results
+        if cursor_projects.count() == 0:
+            result = -1
+        else:
+            # Create dataframe with Dependability related data
+            dependability_data_df = pd.DataFrame()
+            for project in cursor_projects:
+                temp_df = pd.DataFrame()
+                for prop in project['report']['properties']['properties']:
+                    temp_df[prop['name']] = [prop['measure']['normValue']]
+                temp_df['Security_Index'] = [project['report']['tqi']['eval']]
+                dependability_data_df = pd.concat([dependability_data_df, temp_df])
+            # Drop columns not present in dependability metrics list
+            dependability_data_df = dependability_data_df[dependability_data_df.columns.intersection(metrics_dependability)]
+            # Reset index
+            dependability_data_df.reset_index(drop=True, inplace=True)
+            result = dependability_data_df
+    except Exception as e:
+        result = -1
+    if debug:
+        print(result)
+
+    return result
+
+#===============================================================================
+# read_from_td_toolbox_api ()
+#===============================================================================
+def read_from_energy_toolbox_api(project_param):
+    """
+    Read Energy related data from the Energy Toolbox API.
+    Arguments:
+        project_param: The project for which the data will be fetched.
+    Returns:
+        A dataframe with Energy related data recovered from the Energy Toolbox API.
+    """
+
+    try:
+        # Call Energy Toolbox API
+        energy_toolbox_url = 'http://147.102.37.20:3002/analysis?new=T&user=&token=&url=%s&commit=&type=history' % project_param
+        response = requests.get(energy_toolbox_url)
+        # Parse output
+        parsed_response = response.json()['history_energy']['rows']
+        # Make output dictionary key numerical
+        parsed_response = {int(k) : v for k, v in parsed_response.items()}
+        # Sort output dictionary
+        sorted(parsed_response, reverse=False)
+        # Use regex to keep only commits in the form 'vXX'
+        pattern = '(^v[0-9]$|^v[0-9][0-9]$)'
+        # Create dataframe with Energy related data
+        energy_data_df = pd.DataFrame()
+        for key in sorted(parsed_response.keys(), reverse=True):
+            if re.match(pattern, parsed_response[key]['commit']):
+                temp_df = pd.DataFrame()
+                temp_df['cpu_cycles'] = ['0']
+                temp_df['cache_references'] = ['0']
+                temp_df['energy_CPU(J)'] = [parsed_response[key]['mainplatform1']]
+                energy_data_df = pd.concat([energy_data_df, temp_df])
+        # Reset index
+        energy_data_df.reset_index(drop=True, inplace=True)
+        result = energy_data_df
+    except requests.exceptions.RequestException as e:
+        result = -1
     if debug:
         print(result)
 
