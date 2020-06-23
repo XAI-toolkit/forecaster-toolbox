@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import pymongo
 import requests
+import re
 from math import sqrt
 from sklearn.metrics import mean_squared_error
 from bson import ObjectId
@@ -255,6 +256,49 @@ def read_from_dependability_toolbox_api(project_param):
             dependability_data_df.reset_index(drop=True, inplace=True)
             result = dependability_data_df
     except Exception as e:
+        result = -1
+    if debug:
+        print(result)
+
+    return result
+
+#===============================================================================
+# read_from_td_toolbox_api ()
+#===============================================================================
+def read_from_energy_toolbox_api(project_param):
+    """
+    Read Energy related data from the Energy Toolbox API.
+    Arguments:
+        project_param: The project for which the data will be fetched.
+    Returns:
+        A dataframe with Energy related data recovered from the Energy Toolbox API.
+    """
+
+    try:
+        # Call Energy Toolbox API
+        energy_toolbox_url = 'http://147.102.37.20:3002/analysis?new=T&user=&token=&url=%s&commit=&type=history' % project_param
+        response = requests.get(energy_toolbox_url)
+        # Parse output
+        parsed_response = response.json()['history_energy']['rows']
+        # Make output dictionary key numerical
+        parsed_response = {int(k) : v for k, v in parsed_response.items()}
+        # Sort output dictionary
+        sorted(parsed_response, reverse=False)
+        # Use regex to keep only commits in the form 'vXX'
+        pattern = '(^v[0-9]$|^v[0-9][0-9]$)'
+        # Create dataframe with Energy related data
+        energy_data_df = pd.DataFrame()
+        for key in sorted(parsed_response.keys(), reverse=True):
+            if re.match(pattern, parsed_response[key]['commit']):
+                temp_df = pd.DataFrame()
+                temp_df['cpu_cycles'] = ['0']
+                temp_df['cache_references'] = ['0']
+                temp_df['energy_CPU(J)'] = [parsed_response[key]['mainplatform1']]
+                energy_data_df = pd.concat([energy_data_df, temp_df])
+        # Reset index
+        energy_data_df.reset_index(drop=True, inplace=True)
+        result = energy_data_df
+    except requests.exceptions.RequestException as e:
         result = -1
     if debug:
         print(result)
