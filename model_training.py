@@ -15,7 +15,7 @@ from sklearn.metrics import make_scorer
 from sklearn.utils.testing import ignore_warnings
 from sklearn.exceptions import ConvergenceWarning
 from pmdarima import auto_arima
-from utils import mean_absolute_percentage_error, root_mean_squared_error, series_to_supervised, read_from_td_toolbox_api, read_from_dependability_toolbox_api
+from utils import mean_absolute_percentage_error, root_mean_squared_error, series_to_supervised, read_from_td_toolbox_api, read_from_dependability_toolbox_api, read_from_energy_toolbox_api
 
 debug = bool(os.environ.get('DEBUG'))
 
@@ -550,8 +550,15 @@ def build_and_train_energy(horizon_param, project_param, regressor_param, ground
     window_size = 2
 
     # Read dataset
-    dataset_en = pd.read_csv('data/%s.csv' % project_param, sep=";", usecols=metrics_energy)
-    # dataset = read_from_database('energy_dummy', 'localhost', 27017, project_param, {'_id': 0, 'cpu_cycles': 1, 'cache_references': 1, 'energy_CPU(J)': 1})
+    if project_param == 'Neurasmus':
+        dataset_en = read_from_energy_toolbox_api('neurasmus')
+
+        # in case Energy API is not responding
+        if not isinstance(dataset_en, pd.DataFrame):
+            dataset_en = pd.read_csv('data/imd_technical_debt_energy_measures.csv', sep=";", usecols=metrics_energy)
+    else:
+        dataset_en = pd.read_csv('data/%s.csv' % project_param, sep=";", usecols=metrics_energy)
+        # dataset = read_from_database('energy_dummy', 'localhost', 27017, project_param, {'_id': 0, 'cpu_cycles': 1, 'cache_references': 1, 'energy_CPU(J)': 1})
 
     # Initialise variables
     dict_result = {
