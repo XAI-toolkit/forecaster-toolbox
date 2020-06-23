@@ -5,13 +5,13 @@ channels:
   - defaults
 dependencies:
   - python=3.6.4
-  - flask
-  - flask-cors
-  - numpy
-  - pandas
-  - pmdarima
-  - pymongo
-  - pytest
-  - requests
-  - scikit-learn
-  - waitress
+  - flask=1.1.2
+  - flask-cors=3.0.8
+  - numpy=1.18.1
+  - pandas=1.0.3
+  - pmdarima=1.2.0
+  - pymongo=3.9.0
+  - pytest=5.4.1
+  - requests=2.23.0
+  - scikit-learn=0.22.1
+  - waitress=1.4.3
