@@ -248,7 +248,7 @@ def read_from_dependability_toolbox_api(project_param):
                 temp_df = pd.DataFrame()
                 for prop in project['report']['properties']['properties']:
                     temp_df[prop['name']] = [prop['measure']['normValue']]
-                temp_df['Security_Index'] = [project['report']['tqi']['eval']]
+                temp_df['Security_Index'] = [project['report']['security_index']['eval']]
                 dependability_data_df = pd.concat([dependability_data_df, temp_df])
             # Drop columns not present in dependability metrics list
             dependability_data_df = dependability_data_df[dependability_data_df.columns.intersection(metrics_dependability)]
