@@ -288,7 +288,7 @@ def read_from_energy_toolbox_api(project_param):
         pattern = '(^v[0-9]$|^v[0-9][0-9]$)'
         # Create dataframe with Energy related data
         energy_data_df = pd.DataFrame()
-        for key in sorted(parsed_response.keys(), reverse=True):
+        for key in sorted(parsed_response.keys(), reverse=False):
             if re.match(pattern, parsed_response[key]['commit']):
                 temp_df = pd.DataFrame()
                 temp_df['cpu_cycles'] = ['0']
