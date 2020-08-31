@@ -12,7 +12,6 @@ import re
 from math import sqrt
 from sklearn.metrics import mean_squared_error
 from bson import ObjectId
-from datetime import datetime
 
 debug = bool(os.environ.get('DEBUG', False))
 
