@@ -14,7 +14,7 @@ def test_root_mean_squared_error(x_vector_input):
     assert root_mean_squared_error(x_vector_input, x_vector_input) == 0
 
 def test_series_to_supervised(x_dataframe_input, x_dataframe_output):
-    assert series_to_supervised(x_dataframe_input, n_in=1, n_out=1, dropnan=False).equals(x_dataframe_output)
+    assert series_to_supervised(x_dataframe_input, n_in=1, n_out=2, dropnan=False).equals(x_dataframe_output)
 
 def test_objectid_to_string(dict_oid_input):
     dict_str = objectid_to_string(dict_oid_input)
