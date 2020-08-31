@@ -200,6 +200,8 @@ def read_from_td_toolbox_api(project_param):
         td_data_df = td_data_df[td_data_df.columns.intersection(metrics_td)]
         result = td_data_df
     except requests.exceptions.RequestException as e:
+        if debug:
+            print(e)
         result = -1
     if debug:
         print(result)
@@ -255,6 +257,8 @@ def read_from_dependability_toolbox_api(project_param):
             dependability_data_df.reset_index(drop=True, inplace=True)
             result = dependability_data_df
     except Exception as e:
+        if debug:
+            print(e)
         result = -1
     if debug:
         print(result)
@@ -298,6 +302,8 @@ def read_from_energy_toolbox_api(project_param):
         energy_data_df.reset_index(drop=True, inplace=True)
         result = energy_data_df
     except requests.exceptions.RequestException as e:
+        if debug:
+            print(e)
         result = -1
     if debug:
         print(result)
