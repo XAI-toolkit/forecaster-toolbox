@@ -51,6 +51,9 @@ def x_dataframe_output():
         'var1(t)': [1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0],
         'var2(t)': [2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0],
         'var3(t)': [3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0],
+        'var1(t+1)': [1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,float('nan')],
+        'var2(t+1)': [2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,float('nan')],
+        'var3(t+1)': [3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,3.0,float('nan')],
     }
     return pd.DataFrame(x_object)
 
@@ -74,3 +77,18 @@ def forecaster_url_input():
 def forecasting_horizon_input():
     horizon = 10
     return horizon
+
+@pytest.fixture
+def forecasting_project_input():
+    project = 'Neurasmus'
+    return project
+
+@pytest.fixture
+def forecasting_project_class_level_input():
+    project = 'apache_kafka_measures'
+    return project
+
+@pytest.fixture
+def forecasting_class_number_input():
+    classes = 10
+    return classes
