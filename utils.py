@@ -188,17 +188,24 @@ def read_from_td_toolbox_api(project_param):
     # selecting indicators that will be used as model variables
     metrics_td = ['bugs', 'vulnerabilities', 'code_smells', 'sqale_index', 'reliability_remediation_effort', 'security_remediation_effort']
 
+    # Check wether TD Toolbox API is up and running else return -1
     try:
         # Call TD Toolbox API
         td_toolbox_url = 'http://195.251.210.147:9941/api/sdk4ed/certh/metrics/%s?limit=40' % project_param
         response = requests.get(td_toolbox_url)
-        # Create dataframe with TD related data
-        td_data_df = pd.DataFrame.from_dict(response.json())
-        # Rename columns
-        td_data_df.rename(columns={'sqaleIndex': 'sqale_index', 'reliabilityRemediationEffort': 'reliability_remediation_effort', 'securityRemediationEffort': 'security_remediation_effort', 'codeSmells': 'code_smells'}, inplace=True)
-        # Drop columns not present in TD metrics list
-        td_data_df = td_data_df[td_data_df.columns.intersection(metrics_td)]
-        result = td_data_df
+        # Check wether TD Toolbox API returns status code 200 else return -1
+        if response.status_code == 200:
+            # Create dataframe with TD related data
+            td_data_df = pd.DataFrame.from_dict(response.json())
+            # Rename columns
+            td_data_df.rename(columns={'sqaleIndex': 'sqale_index', 'reliabilityRemediationEffort': 'reliability_remediation_effort', 'securityRemediationEffort': 'security_remediation_effort', 'codeSmells': 'code_smells'}, inplace=True)
+            # Drop columns not present in TD metrics list
+            td_data_df = td_data_df[td_data_df.columns.intersection(metrics_td)]
+            result = td_data_df
+        else:
+            if debug:
+                print(response.status_code)
+            result = -1
     except requests.exceptions.RequestException as e:
         if debug:
             print(e)
@@ -220,6 +227,7 @@ def read_from_dependability_toolbox_api(project_param):
         A dataframe with Dependability related data recovered from the Dependability Toolbox API.
     """
 
+    # TODO: This function now reads Dependability data directly from Dependability Toolbox DB. Later will be an API
     # selecting indicators that will be used as model variables
     metrics_dependability = ['Resource_Handling', 'Assignment', 'Exception_Handling', 'Misused_Functionality', 'Security_Index']
 
@@ -277,30 +285,37 @@ def read_from_energy_toolbox_api(project_param):
         A dataframe with Energy related data recovered from the Energy Toolbox API.
     """
 
+    # Check wether Energy Toolbox API is up and running else return -1
     try:
         # Call Energy Toolbox API
         energy_toolbox_url = 'http://147.102.37.20:3002/analysis?new=T&user=&token=&url=%s&commit=&type=history' % project_param
         response = requests.get(energy_toolbox_url)
-        # Parse output
-        parsed_response = response.json()['history_energy']['rows']
-        # Make output dictionary key numerical
-        parsed_response = {int(k) : v for k, v in parsed_response.items()}
-        # Sort output dictionary
-        sorted(parsed_response, reverse=False)
-        # Use regex to keep only commits in the form 'vXX'
-        pattern = '(^v[0-9]$|^v[0-9][0-9]$)'
-        # Create dataframe with Energy related data
-        energy_data_df = pd.DataFrame()
-        for key in sorted(parsed_response.keys(), reverse=False):
-            if re.match(pattern, parsed_response[key]['commit']):
-                temp_df = pd.DataFrame()
-                temp_df['cpu_cycles'] = ['0']
-                temp_df['cache_references'] = ['0']
-                temp_df['energy_CPU(J)'] = [parsed_response[key]['mainplatform1']]
-                energy_data_df = pd.concat([energy_data_df, temp_df])
-        # Reset index
-        energy_data_df.reset_index(drop=True, inplace=True)
-        result = energy_data_df
+        # Check wether Energy Toolbox API returns status code 200 else return -1
+        if response.status_code == 200:
+            # Parse output
+            parsed_response = response.json()['history_energy']['rows']
+            # Make output dictionary key numerical
+            parsed_response = {int(k) : v for k, v in parsed_response.items()}
+            # Sort output dictionary
+            sorted(parsed_response, reverse=False)
+            # Use regex to keep only commits in the form 'vXX'
+            pattern = '(^v[0-9]$|^v[0-9][0-9]$)'
+            # Create dataframe with Energy related data
+            energy_data_df = pd.DataFrame()
+            for key in sorted(parsed_response.keys(), reverse=False):
+                if re.match(pattern, parsed_response[key]['commit']):
+                    temp_df = pd.DataFrame()
+                    temp_df['cpu_cycles'] = ['0']
+                    temp_df['cache_references'] = ['0']
+                    temp_df['energy_CPU(J)'] = [parsed_response[key]['mainplatform1']]
+                    energy_data_df = pd.concat([energy_data_df, temp_df])
+            # Reset index
+            energy_data_df.reset_index(drop=True, inplace=True)
+            result = energy_data_df
+        else:
+            if debug:
+                print(response.status_code)
+            result = -1
     except requests.exceptions.RequestException as e:
         if debug:
             print(e)

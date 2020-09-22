@@ -256,6 +256,7 @@ def build_and_train_td(horizon_param, project_param, regressor_param, ground_tru
     window_size = 2
 
     # Read dataset
+    # TODO: The code currently checks if project_param is 'Neurasmus' and calls TD Toolbox API, otherwise reads from csv. Needs to be more generalised
     if project_param == 'Neurasmus':
         dataset_td = read_from_td_toolbox_api('imd_technical_debt')
 
@@ -648,6 +649,7 @@ def build_and_train_dependability(horizon_param, project_param, regressor_param,
     window_size = 2
 
     # Read dataset
+    # TODO: The code currently checks if project_param is 'Neurasmus' and calls Dependability Toolbox API, otherwise reads from csv. Needs to be more generalised
     if project_param == 'Neurasmus':
         dataset_dep = read_from_dependability_toolbox_api('sdk4ed-healthcare-use-case')
 
@@ -794,6 +796,7 @@ def build_and_train_energy(horizon_param, project_param, regressor_param, ground
     window_size = 2
 
     # Read dataset
+    # TODO: The code currently checks if project_param is 'Neurasmus' and calls Energy Toolbox API, otherwise reads from csv. Needs to be more generalised
     if project_param == 'Neurasmus':
         dataset_en = read_from_energy_toolbox_api('neurasmus')
 
