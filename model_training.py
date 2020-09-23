@@ -233,11 +233,140 @@ def create_regressor(reg_type, x_array, y_array):
         return -1
 
 #===============================================================================
+# generate_forecasts ()
+#===============================================================================
+def generate_forecasts(horizon_param, project_param, regressor_param, ground_truth_param, test_param, dataset, target_var, window_size):
+    """
+    Build TD forecasting models and return forecasts for an horizon specified by the user.
+    Arguments:
+        horizon_param: The forecasting horizon up to which forecasts will be produced.
+        project_param: The project for which the forecasts will be produced.
+        regressor_param: The regressor models that will be used to produce forecasts.
+        ground_truth_param: If the model will return also ground truth values or not.
+        test_param: If the model will produce Train-Test or unseen forecasts
+        dataset: The dataset including independent and dependent variable vectors
+        target_var: The name of the target variable (e.g. 'total_principal')
+        window_size: The length of the sliding window 
+    Returns:
+        A dictionary containing forecasted values (and ground thruth values if
+        ground_truth_param is set to yes) for each intermediate step ahead up
+        to the specified horizon.
+    """
+    # Initialise variables
+    dict_result = {
+        'parameters': {
+            'project': project_param,
+            'horizon': horizon_param,
+            'regressor': regressor_param,
+            'ground_truth': ground_truth_param,
+            'test': test_param
+        }
+    }
+    list_forecasts = []
+    list_ground_truth = []
+
+    # Make forecasts using the ARIMA model
+    if regressor_param == 'arima':
+        # Test model
+        if test_param == 'yes':
+            # Split data to training/test set to test model
+            y_array = dataset[target_var][0:-horizon_param]
+        # Deploy model
+        else:
+            # Set Y to to deploy model for real forecasts
+            y_array = dataset[target_var]
+
+        # Make forecasts for training/test set
+        regressor = create_regressor(regressor_param, None, y_array)
+        if regressor is -1:
+            return -1
+        y_pred = regressor.predict(n_periods=horizon_param)
+
+        # Fill dataframe with forecasts
+        for intermediate_horizon in range(1, horizon_param+1):
+            version_counter = len(y_array)+intermediate_horizon
+            temp_dict = {
+                'version': version_counter,
+                'value': float(y_pred[intermediate_horizon-1])
+            }
+            list_forecasts.append(temp_dict)
+    # Make forecasts using the Direct approach, i.e. train separate ML models for each forecasting horizon
+    else:
+        for intermediate_horizon in range(1, horizon_param+1):
+            if debug:
+                print('=========================== Horizon: %s ============================' % intermediate_horizon)
+
+            # Add time-shifted prior and future period
+            data = series_to_supervised(dataset, n_in=window_size)
+
+            # Append dependend variable column with value equal to total_principal of the target horizon's version
+            data['forecasted_%s' % target_var] = data['%s(t)' % target_var].shift(-intermediate_horizon)
+            data = data.drop(data.index[-intermediate_horizon:])
+
+            # Remove TD as independent variable
+            data = data.drop(columns=['%s(t-%s)' % (target_var, i) for i in range(window_size, 0, -1)]) 
+
+            # Define independent and dependent variables
+            x_array = data.iloc[:, data.columns != 'forecasted_%s' % target_var].values
+            y_array = data.iloc[:, data.columns == 'forecasted_%s' % target_var].values
+
+            # Test model
+            if test_param == 'yes':
+                # Assign version counter
+                version_counter = len(dataset)-(horizon_param-intermediate_horizon)
+                # Split data to training/test set to test model
+                x_train, x_test, y_train, y_test = train_test_split(x_array, y_array, test_size=horizon_param, random_state=0, shuffle=False)
+                # Make forecasts for training/test set
+                regressor = create_regressor(regressor_param, x_train, y_train)
+                if regressor is -1:
+                    return -1
+                y_pred = regressor.predict(x_test)
+            # Deploy model
+            else:
+                # Assign version counter
+                version_counter = len(dataset)+intermediate_horizon
+                # Define X to to deploy model for real forecasts
+                x_real = series_to_supervised(dataset, n_in=window_size, dropnan=False)
+                x_real = x_real.drop(columns=['%s(t-%s)' % (target_var, i) for i in range(window_size, 0, -1)])
+                x_real = x_real.iloc[-1, :].values
+                x_real = x_real.reshape(1, -1)
+                # Make real forecasts
+                regressor = create_regressor(regressor_param, x_array, y_array)
+                if regressor is -1:
+                    return -1
+                y_pred = regressor.predict(x_real)
+
+            # Fill dataframe with forecasts
+            temp_dict = {
+                'version': version_counter,
+                'value': float(y_pred[0])
+            }
+            list_forecasts.append(temp_dict)
+
+    # Fill results dictionary with forecasts
+    dict_result['forecasts'] = list_forecasts
+
+    # If the model will return also ground truth values
+    if ground_truth_param == 'yes':
+        # Fill dataframe with ground thruth
+        for intermediate_horizon in range(0, len(dataset[target_var])):
+            temp_dict = {
+                'version': intermediate_horizon + 1,
+                'value': float(dataset[target_var][intermediate_horizon])
+            }
+            list_ground_truth.append(temp_dict)
+        # Fill results dictionary with ground thruth
+        dict_result['ground_truth'] = list_ground_truth
+
+    return dict_result
+
+#===============================================================================
 # build_and_train_td ()
 #===============================================================================
 def build_and_train_td(horizon_param, project_param, regressor_param, ground_truth_param, test_param):
     """
-    Build TD forecasting models and return forecasts for an horizon specified by the user.
+    Read TD dataset, call a function that generates forecasts and return results
+    to forecaster service.
     Arguments:
         horizon_param: The forecasting horizon up to which forecasts will be produced.
         project_param: The project for which the forecasts will be produced.
@@ -269,117 +398,13 @@ def build_and_train_td(horizon_param, project_param, regressor_param, ground_tru
     dataset_td['total_principal'] = dataset_td['reliability_remediation_effort'] + dataset_td['security_remediation_effort'] + dataset_td['sqale_index']
     dataset_td = dataset_td.drop(columns=['sqale_index', 'reliability_remediation_effort', 'security_remediation_effort'])
 
-    # Initialise variables
-    dict_result = {
-        'parameters': {
-            'project': project_param,
-            'horizon': horizon_param,
-            'regressor': regressor_param,
-            'ground_truth': ground_truth_param,
-            'test': test_param
-        }
-    }
-    list_forecasts = []
-    list_ground_truth = []
-
-    # Make forecasts using the ARIMA model
-    if regressor_param == 'arima':
-        # Test model
-        if test_param == 'yes':
-            # Split data to training/test set to test model
-            y_array = dataset_td['total_principal'][0:-horizon_param]
-        # Deploy model
-        else:
-            # Set Y to to deploy model for real forecasts
-            y_array = dataset_td['total_principal']
-
-        # Make forecasts for training/test set
-        regressor = create_regressor(regressor_param, None, y_array)
-        if regressor is -1:
-            return -1
-        y_pred = regressor.predict(n_periods=horizon_param)
-
-        # Fill dataframe with forecasts
-        for intermediate_horizon in range(1, horizon_param+1):
-            version_counter = len(y_array)+intermediate_horizon
-            temp_dict = {
-                'version': version_counter,
-                'value': float(y_pred[intermediate_horizon-1])
-            }
-            list_forecasts.append(temp_dict)
-
-    # Make forecasts using the Direct approach, i.e. train separate ML models for each forecasting horizon
-    else:
-        for intermediate_horizon in range(1, horizon_param+1):
-            if debug:
-                print('=========================== Horizon: %s ============================' % intermediate_horizon)
-
-            # Add time-shifted prior and future period
-            data = series_to_supervised(dataset_td, n_in=window_size)
-
-            # Append dependend variable column with value equal to total_principal of the target horizon's version
-            data['forecasted_total_principal'] = data['total_principal(t)'].shift(-intermediate_horizon)
-            data = data.drop(data.index[-intermediate_horizon:])
-
-            # Remove TD as independent variable
-            data = data.drop(columns=['total_principal(t-%s)' % (i) for i in range(window_size, 0, -1)]) 
-
-            # Define independent and dependent variables
-            x_array = data.iloc[:, data.columns != 'forecasted_total_principal'].values
-            y_array = data.iloc[:, data.columns == 'forecasted_total_principal'].values
-
-            # Test model
-            if test_param == 'yes':
-                # Assign version counter
-                version_counter = len(dataset_td)-(horizon_param-intermediate_horizon)
-                # Split data to training/test set to test model
-                x_train, x_test, y_train, y_test = train_test_split(x_array, y_array, test_size=horizon_param, random_state=0, shuffle=False)
-                # Make forecasts for training/test set
-                regressor = create_regressor(regressor_param, x_train, y_train)
-                if regressor is -1:
-                    return -1
-                y_pred = regressor.predict(x_test)
-            # Deploy model
-            else:
-                # Assign version counter
-                version_counter = len(dataset_td)+intermediate_horizon
-                # Define X to to deploy model for real forecasts
-                x_real = series_to_supervised(dataset_td, n_in=window_size, dropnan=False)
-                x_real = x_real.drop(columns=['total_principal(t-%s)' % (i) for i in range(window_size, 0, -1)])
-                x_real = x_real.iloc[-1, :].values
-                x_real = x_real.reshape(1, -1)
-                # Make real forecasts
-                regressor = create_regressor(regressor_param, x_array, y_array)
-                if regressor is -1:
-                    return -1
-                y_pred = regressor.predict(x_real)
-
-            # Fill dataframe with forecasts
-            temp_dict = {
-                'version': version_counter,
-                'value': float(y_pred[0])
-            }
-            list_forecasts.append(temp_dict)
-
-    # Fill results dictionary with forecasts
-    dict_result['forecasts'] = list_forecasts
-
-    # If the model will return also ground truth values
-    if ground_truth_param == 'yes':
-        # Fill dataframe with ground thruth
-        for intermediate_horizon in range(0, len(dataset_td['total_principal'])):
-            temp_dict = {
-                'version': intermediate_horizon + 1,
-                'value': float(dataset_td['total_principal'][intermediate_horizon])
-            }
-            list_ground_truth.append(temp_dict)
-        # Fill results dictionary with ground thruth
-        dict_result['ground_truth'] = list_ground_truth
+    # Call a function that generates forecasts
+    forecast_results = generate_forecasts(horizon_param, project_param, regressor_param, ground_truth_param, test_param, dataset_td, 'total_principal', window_size)
 
     if debug:
-        print(dict_result)
+        print(forecast_results)
 
-    return dict_result
+    return forecast_results
 
 #===============================================================================
 # build_and_train_td_class_level ()
@@ -630,7 +655,8 @@ def build_and_train_td_class_level(horizon_param, project_param, project_classes
 #===============================================================================
 def build_and_train_dependability(horizon_param, project_param, regressor_param, ground_truth_param, test_param):
     """
-    Build Dependability forecasting models and return forecasts for an horizon specified by the user.
+    Read Dependability dataset, call a function that generates forecasts and
+    return results to forecaster service.
     Arguments:
         horizon_param: The forecasting horizon up to which forecasts will be produced.
         project_param: The project for which the forecasts will be produced.
@@ -660,124 +686,21 @@ def build_and_train_dependability(horizon_param, project_param, regressor_param,
         dataset_dep = pd.read_csv('data/%s.csv' % project_param, sep=";", usecols=metrics_dependability)
         # dataset = read_from_database('dependability_dummy', 'localhost', 27017, project_param, {'_id': 0, 'Resource_Handling': 1, 'Assignment': 1, 'Exception_Handling': 1, 'Misused_Functionality': 1, 'Security_Index': 1})
 
-    # Initialise variables
-    dict_result = {
-        'parameters': {
-            'project': project_param,
-            'horizon': horizon_param,
-            'regressor': regressor_param,
-            'ground_truth': ground_truth_param,
-            'test': test_param
-        }
-    }
-    list_forecasts = []
-    list_ground_truth = []
-
-    # Make forecasts using the ARIMA model
-    if regressor_param == 'arima':
-        # Test model
-        if test_param == 'yes':
-            # Split data to training/test set to test model
-            y_array = dataset_dep['Security_Index'][0:-horizon_param]
-        # Deploy model
-        else:
-            # Set Y to to deploy model for real forecasts
-            y_array = dataset_dep['Security_Index']
-
-        # Make forecasts for training/test set
-        regressor = create_regressor(regressor_param, None, y_array)
-        if regressor is -1:
-            return -1
-        y_pred = regressor.predict(n_periods=horizon_param)
-
-        # Fill dataframe with forecasts
-        for intermediate_horizon in range(1, horizon_param+1):
-            version_counter = len(y_array)+intermediate_horizon
-            temp_dict = {
-                'version': version_counter,
-                'value': float(y_pred[intermediate_horizon-1])
-            }
-            list_forecasts.append(temp_dict)
-
-    # Make forecasts using the Direct approach, i.e. train separate ML models for each forecasting horizon
-    else:
-        for intermediate_horizon in range(1, horizon_param+1):
-            if debug:
-                print('=========================== Horizon: %s ============================' % intermediate_horizon)
-
-            # Add time-shifted prior and future period
-            data = series_to_supervised(dataset_dep, n_in=window_size)
-
-            # Append dependend variable column with value equal to Security_Index of the target horizon's version
-            data['forecasted_Security_Index'] = data['Security_Index(t)'].shift(-intermediate_horizon)
-            data = data.drop(data.index[-intermediate_horizon:])
-
-            # Remove Security_Index as independent variable
-            data = data.drop(columns=['Security_Index(t-%s)' % (i) for i in range(window_size, 0, -1)]) 
-
-            # Define independent and dependent variables
-            x_array = data.iloc[:, data.columns != 'forecasted_Security_Index'].values
-            y_array = data.iloc[:, data.columns == 'forecasted_Security_Index'].values
-
-            # Test model
-            if test_param == 'yes':
-                # Assign version counter
-                version_counter = len(dataset_dep)-(horizon_param-intermediate_horizon)
-                # Split data to training/test set to test model
-                x_train, x_test, y_train, y_test = train_test_split(x_array, y_array, test_size=horizon_param, random_state=0, shuffle=False)
-                # Make forecasts for training/test set
-                regressor = create_regressor(regressor_param, x_train, y_train)
-                if regressor is -1:
-                    return -1
-                y_pred = regressor.predict(x_test)
-            # Deploy model
-            else:
-                # Assign version counter
-                version_counter = len(dataset_dep)+intermediate_horizon
-                # Define X to to deploy model for real forecasts
-                x_real = series_to_supervised(dataset_dep, n_in=window_size, dropnan=False)
-                x_real = x_real.drop(columns=['Security_Index(t-%s)' % (i) for i in range(window_size, 0, -1)])
-                x_real = x_real.iloc[-1, :].values
-                x_real = x_real.reshape(1, -1)
-                # Make real forecasts
-                regressor = create_regressor(regressor_param, x_array, y_array)
-                if regressor is -1:
-                    return -1
-                y_pred = regressor.predict(x_real)
-
-            # Fill dataframe with forecasts
-            temp_dict = {
-                'version': version_counter,
-                'value': float(y_pred[0])
-            }
-            list_forecasts.append(temp_dict)
-
-    # Fill results dictionary with forecasts
-    dict_result['forecasts'] = list_forecasts
-
-    # If the model will return also ground truth values
-    if ground_truth_param == 'yes':
-        # Fill dataframe with ground thruth
-        for intermediate_horizon in range(0, len(dataset_dep['Security_Index'])):
-            temp_dict = {
-                'version': intermediate_horizon + 1,
-                'value': float(dataset_dep['Security_Index'][intermediate_horizon])
-            }
-            list_ground_truth.append(temp_dict)
-        # Fill results dictionary with ground thruth
-        dict_result['ground_truth'] = list_ground_truth
+    # Call a function that generates forecasts
+    forecast_results = generate_forecasts(horizon_param, project_param, regressor_param, ground_truth_param, test_param, dataset_dep, 'Security_Index', window_size)
 
     if debug:
-        print(dict_result)
+        print(forecast_results)
 
-    return dict_result
+    return forecast_results
 
 #===============================================================================
 # build_and_train_energy ()
 #===============================================================================
 def build_and_train_energy(horizon_param, project_param, regressor_param, ground_truth_param, test_param):
     """
-    Build Energy forecasting models and return forecasts for an horizon specified by the user.
+    Read Energy dataset, call a function that generates forecasts and return
+    results to forecaster service.
     Arguments:
         horizon_param: The forecasting horizon up to which forecasts will be produced.
         project_param: The project for which the forecasts will be produced.
@@ -807,114 +730,10 @@ def build_and_train_energy(horizon_param, project_param, regressor_param, ground
         dataset_en = pd.read_csv('data/%s.csv' % project_param, sep=";", usecols=metrics_energy)
         # dataset = read_from_database('energy_dummy', 'localhost', 27017, project_param, {'_id': 0, 'cpu_cycles': 1, 'cache_references': 1, 'energy_CPU(J)': 1})
 
-    # Initialise variables
-    dict_result = {
-        'parameters': {
-            'project': project_param,
-            'horizon': horizon_param,
-            'regressor': regressor_param,
-            'ground_truth': ground_truth_param,
-            'test': test_param
-        }
-    }
-    list_forecasts = []
-    list_ground_truth = []
-
-    # Make forecasts using the ARIMA model
-    if regressor_param == 'arima':
-        # Test model
-        if test_param == 'yes':
-            # Split data to training/test set to test model
-            y_array = dataset_en['energy_CPU(J)'][0:-horizon_param]
-        # Deploy model
-        else:
-            # Set Y to to deploy model for real forecasts
-            y_array = dataset_en['energy_CPU(J)']
-
-        # Make forecasts for training/test set
-        regressor = create_regressor(regressor_param, None, y_array)
-        if regressor is -1:
-            return -1
-        y_pred = regressor.predict(n_periods=horizon_param)
-
-        # Fill dataframe with forecasts
-        for intermediate_horizon in range(1, horizon_param+1):
-            version_counter = len(y_array)+intermediate_horizon
-            temp_dict = {
-                'version': version_counter,
-                'value': float(y_pred[intermediate_horizon-1])
-            }
-            list_forecasts.append(temp_dict)
-
-    # Make forecasts using the Direct approach, i.e. train separate ML models for each forecasting horizon
-    else:
-        for intermediate_horizon in range(1, horizon_param+1):
-            if debug:
-                print('=========================== Horizon: %s ============================' % intermediate_horizon)
-
-            # Add time-shifted prior and future period
-            data = series_to_supervised(dataset_en, n_in=window_size)
-
-            # Append dependend variable column with value equal to energy_CPU(J) of the target horizon's version
-            data['forecasted_energy_CPU(J)'] = data['energy_CPU(J)(t)'].shift(-intermediate_horizon)
-            data = data.drop(data.index[-intermediate_horizon:])
-
-            # Remove energy_CPU(J) as independent variable
-            data = data.drop(columns=['energy_CPU(J)(t-%s)' % (i) for i in range(window_size, 0, -1)])
-
-            # Define independent and dependent variables
-            x_array = data.iloc[:, data.columns != 'forecasted_energy_CPU(J)'].values
-            y_array = data.iloc[:, data.columns == 'forecasted_energy_CPU(J)'].values
-
-            # Test model
-            if test_param == 'yes':
-                # Assign version counter
-                version_counter = len(dataset_en)-(horizon_param-intermediate_horizon)
-                # Split data to training/test set to test model
-                x_train, x_test, y_train, y_test = train_test_split(x_array, y_array, test_size=horizon_param, random_state=0, shuffle=False)
-                # Make forecasts for training/test set
-                regressor = create_regressor(regressor_param, x_train, y_train)
-                if regressor is -1:
-                    return -1
-                y_pred = regressor.predict(x_test)
-            # Deploy model
-            else:
-                # Assign version counter
-                version_counter = len(dataset_en)+intermediate_horizon
-                # Define X to to deploy model for real forecasts
-                x_real = series_to_supervised(dataset_en, n_in=window_size, dropnan=False)
-                x_real = x_real.drop(columns=['energy_CPU(J)(t-%s)' % (i) for i in range(window_size, 0, -1)])
-                x_real = x_real.iloc[-1, :].values
-                x_real = x_real.reshape(1, -1)
-                # Make real forecasts
-                regressor = create_regressor(regressor_param, x_array, y_array)
-                if regressor is -1:
-                    return -1
-                y_pred = regressor.predict(x_real)
-
-            # Fill dataframe with forecasts
-            temp_dict = {
-                'version': version_counter,
-                'value': float(y_pred[0])
-            }
-            list_forecasts.append(temp_dict)
-
-    # Fill results dictionary with forecasts
-    dict_result['forecasts'] = list_forecasts
-
-    # If the model will return also ground truth values
-    if ground_truth_param == 'yes':
-        # Fill dataframe with ground thruth
-        for intermediate_horizon in range(0, len(dataset_en['energy_CPU(J)'])):
-            temp_dict = {
-                'version': intermediate_horizon + 1,
-                'value': float(dataset_en['energy_CPU(J)'][intermediate_horizon])
-            }
-            list_ground_truth.append(temp_dict)
-        # Fill results dictionary with ground thruth
-        dict_result['ground_truth'] = list_ground_truth
+    # Call a function that generates forecasts
+    forecast_results = generate_forecasts(horizon_param, project_param, regressor_param, ground_truth_param, test_param, dataset_en, 'energy_CPU(J)', window_size)
 
     if debug:
-        print(dict_result)
+        print(forecast_results)
 
-    return dict_result
+    return forecast_results
