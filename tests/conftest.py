@@ -69,11 +69,6 @@ def dict_oid_input():
     return dict_oid
 
 @pytest.fixture
-def forecaster_url_input():
-    base_url = 'http://localhost:5000'
-    return base_url
-
-@pytest.fixture
 def forecasting_horizon_input():
     horizon = 10
     return horizon
