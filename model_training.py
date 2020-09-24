@@ -83,7 +83,7 @@ def grid_search_best(reg_type, x_array, y_array):
 #===============================================================================
 def arima_search_best(y_array):
     """
-    Perform auto_arima and return the model with best (p,d,q) parameters based 
+    Perform auto_arima and return the model with best (p,d,q) parameters based
     on AIC score minimization.
     Arguments:
         y_array: Values of observations as a NumPy array.
@@ -246,7 +246,7 @@ def generate_forecasts(horizon_param, project_param, regressor_param, ground_tru
         test_param: If the model will produce Train-Test or unseen forecasts
         dataset: The dataset including independent and dependent variable vectors
         target_var: The name of the target variable (e.g. 'total_principal')
-        window_size: The length of the sliding window 
+        window_size: The length of the sliding window.
     Returns:
         A dictionary containing forecasted values (and ground thruth values if
         ground_truth_param is set to yes) for each intermediate step ahead up
@@ -304,7 +304,7 @@ def generate_forecasts(horizon_param, project_param, regressor_param, ground_tru
             data = data.drop(data.index[-intermediate_horizon:])
 
             # Remove TD as independent variable
-            data = data.drop(columns=['%s(t-%s)' % (target_var, i) for i in range(window_size, 0, -1)]) 
+            data = data.drop(columns=['%s(t-%s)' % (target_var, i) for i in range(window_size, 0, -1)])
 
             # Define independent and dependent variables
             x_array = data.iloc[:, data.columns != 'forecasted_%s' % target_var].values
@@ -385,7 +385,7 @@ def build_and_train_td(horizon_param, project_param, regressor_param, ground_tru
     window_size = 2
 
     # Read dataset
-    # TODO: The code currently checks if project_param is 'Neurasmus' and calls TD Toolbox API, otherwise reads from csv. Needs to be more generalised
+    # TO DO: The code currently checks if project_param is 'Neurasmus' and calls TD Toolbox API, otherwise reads from csv. Needs to be more generalised
     if project_param == 'Neurasmus':
         dataset_td = read_from_td_toolbox_api('imd_technical_debt')
 
@@ -459,9 +459,9 @@ def build_and_train_td_class_level(horizon_param, project_param, project_classes
 
         # retrieve number of changes in LOC
         class_df_changes = temp_class_df['change_proneness'].sum()
-        class_df_CP = (class_df_changes/temp_class_df.shape[0])
+        class_df_cp = (class_df_changes/temp_class_df.shape[0])
         temp_class_metr_dict['number_of_changes'] = class_df_changes
-        temp_class_metr_dict['change_proneness_(CP)'] = class_df_CP
+        temp_class_metr_dict['change_proneness_(CP)'] = class_df_cp
 
         # compare total_principal across versions
         temp_class_df['change_proneness_td'] = temp_class_df.total_principal == temp_class_df.total_principal.shift()
@@ -469,27 +469,27 @@ def build_and_train_td_class_level(horizon_param, project_param, project_classes
 
         # retrieve number of changes in TD
         class_df_changes_td = temp_class_df['change_proneness_td'].sum()
-        class_df_CP_td = (class_df_changes_td/temp_class_df.shape[0])
+        class_df_cp_td = (class_df_changes_td/temp_class_df.shape[0])
         temp_class_metr_dict['number_of_td_changes'] = class_df_changes_td
-        temp_class_metr_dict['change_proneness_td_(CP-TD)'] = class_df_CP_td
+        temp_class_metr_dict['change_proneness_td_(CP-TD)'] = class_df_cp_td
 
         # retrieve average size of change in LOC
         # calculate diff with previous row
         temp_class_df['change_volume'] = temp_class_df['ncloc'].diff(periods=1)
         temp_class_df['change_volume'].fillna(0,inplace=True)
-        class_df_ED_LOC = (temp_class_df['change_volume'].sum())/class_df_changes
-        temp_class_metr_dict['expected_size_change_(ED-LOC)'] = class_df_ED_LOC
+        class_df_ed_loc = (temp_class_df['change_volume'].sum())/class_df_changes
+        temp_class_metr_dict['expected_size_change_(ED-LOC)'] = class_df_ed_loc
 
         # retrieve projected addition in TD
         # sum changes
-        class_df_aggr_TD_chng = temp_class_df.loc[temp_class_df['change_volume']!=0,['total_principal']].sum()
+        class_df_aggr_td_chng = temp_class_df.loc[temp_class_df['change_volume']!=0,['total_principal']].sum()
         temp_class_df['td_change_volume'] = temp_class_df['total_principal'].diff(periods=1)
         temp_class_df['td_change_volume'].fillna(0,inplace=True)
 
         # sum the td_change on
-        class_df_aggr_TD_chng = float(temp_class_df.loc[temp_class_df['change_proneness']==0,['td_change_volume']].sum())
-        class_df_ED_TD = class_df_aggr_TD_chng/class_df_changes
-        temp_class_metr_dict['expected_td_change_(ED-TD)'] = class_df_ED_TD
+        class_df_aggr_td_chng = float(temp_class_df.loc[temp_class_df['change_proneness']==0,['td_change_volume']].sum())
+        class_df_ed_td = class_df_aggr_td_chng/class_df_changes
+        temp_class_metr_dict['expected_td_change_(ED-TD)'] = class_df_ed_td
 
         temp_class_metr_df = pd.DataFrame.from_records([temp_class_metr_dict], index='class_id', columns=temp_class_metr_dict.keys())
         classes_change_metrics_df = classes_change_metrics_df.append(temp_class_metr_df)
@@ -573,7 +573,7 @@ def build_and_train_td_class_level(horizon_param, project_param, project_classes
                 data = data.drop(data.index[-intermediate_horizon:])
 
                 # Remove TD as independent variable
-                data = data.drop(columns=['total_principal(t-%s)' % (i) for i in range(window_size, 0, -1)]) 
+                data = data.drop(columns=['total_principal(t-%s)' % (i) for i in range(window_size, 0, -1)])
 
                 # Define independent and dependent variables
                 x_array = data.iloc[:, data.columns != 'forecasted_total_principal'].values
@@ -639,7 +639,7 @@ def build_and_train_td_class_level(horizon_param, project_param, project_classes
 
     # Fill results dictionary with forecasts for each class
     dict_result['forecasts'] = list_forecasts
-   
+
     # If the model will return also ground truth values
     if ground_truth_param == 'yes':
         # Fill results dictionary with ground thruth
@@ -675,7 +675,7 @@ def build_and_train_dependability(horizon_param, project_param, regressor_param,
     window_size = 2
 
     # Read dataset
-    # TODO: The code currently checks if project_param is 'Neurasmus' and calls Dependability Toolbox API, otherwise reads from csv. Needs to be more generalised
+    # TO DO: The code currently checks if project_param is 'Neurasmus' and calls Dependability Toolbox API, otherwise reads from csv. Needs to be more generalised
     if project_param == 'Neurasmus':
         dataset_dep = read_from_dependability_toolbox_api('sdk4ed-healthcare-use-case')
 
@@ -719,7 +719,7 @@ def build_and_train_energy(horizon_param, project_param, regressor_param, ground
     window_size = 2
 
     # Read dataset
-    # TODO: The code currently checks if project_param is 'Neurasmus' and calls Energy Toolbox API, otherwise reads from csv. Needs to be more generalised
+    # TO DO: The code currently checks if project_param is 'Neurasmus' and calls Energy Toolbox API, otherwise reads from csv. Needs to be more generalised
     if project_param == 'Neurasmus':
         dataset_en = read_from_energy_toolbox_api('neurasmus')
 

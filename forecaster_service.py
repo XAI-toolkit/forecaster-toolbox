@@ -94,7 +94,7 @@ def td_class_level_forecasting(horizon_param_td=None, project_param_td=None, pro
     # If required parameters are missing from URL
     if horizon_param_td is None or project_param_td is None or project_classes_param_td is None or regressor_param_td is None or ground_truth_param_td is None or test_param_td is None:
         return unprocessable_entity()
-    else:        
+    else:
         # Call build_and_train_td_class_level() function and retrieve forecasts
         results = build_and_train_td_class_level(horizon_param_td, project_param_td, project_classes_param_td, regressor_param_td, ground_truth_param_td, test_param_td)
         if results is -1:
@@ -140,7 +140,7 @@ def dependability_forecasting(horizon_param_dep=None, project_param_dep=None, re
     regressor_param_dep = request.args.get('regressor', default='auto', type=str) # Optional: if key doesn't exist, returns auto
     ground_truth_param_dep = request.args.get('ground_truth', default='no', type=str) # Optional: if key doesn't exist, returns no
     test_param_dep = request.args.get('test', default='no', type=str) # Optional: if key doesn't exist, returns no
- 
+
     # If required parameters are missing from URL
     if horizon_param_dep is None or project_param_dep is None or regressor_param_dep is None or ground_truth_param_dep is None or test_param_dep is None:
         return unprocessable_entity()

@@ -4,12 +4,12 @@
 """
 
 import os
+import re
+from math import sqrt
 import numpy as np
 import pandas as pd
 import pymongo
 import requests
-import re
-from math import sqrt
 from sklearn.metrics import mean_squared_error
 from bson import ObjectId
 
@@ -63,7 +63,7 @@ def series_to_supervised(dataset, n_in=1, n_out=1, dropnan=True):
 
     data = dataset.values
     labels = dataset.columns.tolist()
-    n_vars = 1 if type(data) is list else data.shape[1]
+    n_vars = 1 if isinstance(data, list) else data.shape[1]
     d_f = pd.DataFrame(data)
     cols, names = list(), list()
 
@@ -150,7 +150,8 @@ def read_from_database(db_name, db_url, db_port, collection_name, fields):
         db_url: The URL of the Mongo database.
         db_port: The URL port of the Mongo database.
         collection_name: The name of the collection of the Mongo database.
-        fields: The fields of the collection of the Mongo database in a form of {'_id': 0, 'field1': 1, 'field2': 1, ...}.
+        fields: The fields of the collection of the Mongo database in a form of
+        {'_id': 0, 'field1': 1, 'field2': 1, ...}.
     Returns:
         A dataframe with the fields recovered from the Mongo database.
     """
