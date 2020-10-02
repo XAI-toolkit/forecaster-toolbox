@@ -3,11 +3,12 @@
 @author: tsoukj
 """
 
+import argparse
 import sys
 sys.path.append('..')
 import os
 from flask import Flask, json
-from forecaster_service import td_forecasting, dependability_forecasting, energy_forecasting, td_class_level_forecasting
+from forecaster_service import td_forecasting, dependability_forecasting, energy_forecasting, td_class_level_forecasting, create_arg_parser
 
 # Create the Flask app
 app = Flask(__name__)
@@ -238,3 +239,70 @@ def test_td_forecasting_class_level_mlr(forecasting_project_class_level_input, f
         assert 'forecasts' in data['results']
         assert len(data['results']['change_metrics']) != 0
         assert len(data['results']['forecasts']) != 0
+
+def test_create_arg_parser():
+    assert isinstance(create_arg_parser(), argparse.ArgumentParser)
+
+def test_td_forecasting_unprocessable_entity():
+    with app.test_request_context('/ForecasterToolbox/TDForecasting?horizon=&project=&regressor=&ground_truth=&test='):
+        r = td_forecasting()
+        data = json.loads(r.data)
+
+        assert r.status_code == 400
+        assert 'Unprocessable Entity' in data['message']
+
+def test_td_forecasting_internal_server_error(forecasting_project_input):
+    with app.test_request_context('/ForecasterToolbox/TDForecasting?horizon=1000&project=%s&regressor=mlr&ground_truth=no&test=no' % (forecasting_project_input)):
+        r = td_forecasting()
+        data = json.loads(r.data)
+
+        assert r.status_code == 500
+        assert 'internal error' in data['message']
+
+def test_energy_forecasting_unprocessable_entity():
+    with app.test_request_context('/ForecasterToolbox/EnergyForecasting?horizon=&project=&regressor=&ground_truth=&test='):
+        r = energy_forecasting()
+        data = json.loads(r.data)
+
+        assert r.status_code == 400
+        assert 'Unprocessable Entity' in data['message']
+
+def test_energy_forecasting_internal_server_error(forecasting_project_input):
+    with app.test_request_context('/ForecasterToolbox/EnergyForecasting?horizon=1000&project=%s&regressor=mlr&ground_truth=no&test=no' % (forecasting_project_input)):
+        r = energy_forecasting()
+        data = json.loads(r.data)
+
+        assert r.status_code == 500
+        assert 'internal error' in data['message']
+
+def test_dependability_forecasting_unprocessable_entity():
+    with app.test_request_context('/ForecasterToolbox/DependabilityForecasting?horizon=&project=&regressor=&ground_truth=&test='):
+        r = dependability_forecasting()
+        data = json.loads(r.data)
+
+        assert r.status_code == 400
+        assert 'Unprocessable Entity' in data['message']
+
+def test_dependability_forecasting_internal_server_error(forecasting_project_input):
+    with app.test_request_context('/ForecasterToolbox/DependabilityForecasting?horizon=1000&project=%s&regressor=mlr&ground_truth=no&test=no' % (forecasting_project_input)):
+        r = dependability_forecasting()
+        data = json.loads(r.data)
+
+        assert r.status_code == 500
+        assert 'internal error' in data['message']
+
+def test_td_forecasting_class_level_unprocessable_entity():
+    with app.test_request_context('/ForecasterToolbox/TDClassLevelForecasting?horizon=&project=&project_classes=&regressor=&ground_truth=&test='):
+        r = td_class_level_forecasting()
+        data = json.loads(r.data)
+
+        assert r.status_code == 400
+        assert 'Unprocessable Entity' in data['message']
+
+def test_td_forecasting_class_level_internal_server_error(forecasting_project_class_level_input, forecasting_class_number_input):
+    with app.test_request_context('/ForecasterToolbox/TDClassLevelForecasting?horizon=1000&project=%s&project_classes=%s&regressor=mlr&ground_truth=no&test=no' % (forecasting_project_class_level_input, forecasting_class_number_input)):
+        r = td_class_level_forecasting()
+        data = json.loads(r.data)
+
+        assert r.status_code == 500
+        assert 'internal error' in data['message']
