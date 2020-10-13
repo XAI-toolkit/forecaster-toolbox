@@ -447,56 +447,50 @@ def build_and_train_td_class_level(horizon_param, project_param, project_classes
         temp_class_df = dataset_td_class[dataset_td_class['class_id'] == class_id]
 
         temp_class_metr_dict = {}
-        temp_class_name = temp_class_df.class_name[temp_class_df.class_name.index[0]]
+        temp_class_name = temp_class_df.class_name.iloc[-1]
         temp_class_metr_dict['class_id'] = class_id
         temp_class_metr_dict['class_name'] = temp_class_name
         temp_class_metr_dict['versions'] = temp_class_df.shape[0]
-        temp_class_metr_dict['td_of_last_version'] = temp_class_df.total_principal[temp_class_df.total_principal.index[-1]]
+        temp_class_metr_dict['td_of_last_version'] = temp_class_df.total_principal.iloc[-1]
 
-        # compare ncloc across versions
-        temp_class_df['change_proneness'] = temp_class_df.ncloc == temp_class_df.ncloc.shift()
-        temp_class_df['change_proneness'] = [1 if i==False else 0 for i in temp_class_df.change_proneness]
-
-        # retrieve number of changes in LOC
-        class_df_changes = temp_class_df['change_proneness'].sum()
-        class_df_cp = (class_df_changes/temp_class_df.shape[0])
+        # compute number of changes in LOC across versions of a class
+        ncloc_has_changed_list = temp_class_df.ncloc == temp_class_df.ncloc.shift()
+        ncloc_has_changed_list = [1 if i==False else 0 for i in ncloc_has_changed_list]
+        class_df_changes = sum(ncloc_has_changed_list)
         temp_class_metr_dict['number_of_changes'] = class_df_changes
+
+        # compute LOC Change Proneness of a class
+        class_df_cp = (class_df_changes/temp_class_df.shape[0])
         temp_class_metr_dict['change_proneness_(CP)'] = class_df_cp
 
-        # compare total_principal across versions
-        temp_class_df['change_proneness_td'] = temp_class_df.total_principal == temp_class_df.total_principal.shift()
-        temp_class_df['change_proneness_td'] = [1 if i==False else 0 for i in temp_class_df.change_proneness_td]
-
-        # retrieve number of changes in TD
-        class_df_changes_td = temp_class_df['change_proneness_td'].sum()
-        class_df_cp_td = (class_df_changes_td/temp_class_df.shape[0])
+        # compute number of changes in TD across versions of a class
+        td_has_changed_list = temp_class_df.total_principal == temp_class_df.total_principal.shift()
+        td_has_changed_list = [1 if i==False else 0 for i in td_has_changed_list]
+        class_df_changes_td = sum(td_has_changed_list)
         temp_class_metr_dict['number_of_td_changes'] = class_df_changes_td
+
+        # compute TD Change Proneness of a class
+        class_df_cp_td = (class_df_changes_td/temp_class_df.shape[0])
         temp_class_metr_dict['change_proneness_td_(CP-TD)'] = class_df_cp_td
 
-        # retrieve average size of change in LOC
-        # calculate diff with previous row
-        temp_class_df['change_volume'] = temp_class_df['ncloc'].diff(periods=1)
-        temp_class_df['change_volume'].fillna(0,inplace=True)
-        class_df_ed_loc = (temp_class_df['change_volume'].sum())/class_df_changes
-        temp_class_metr_dict['expected_size_change_(ED-LOC)'] = class_df_ed_loc
+        # compute average size of changes in LOC across versions of a class
+        ncloc_changes_volume_list = temp_class_df['ncloc'].diff(periods=1)
+        ncloc_changes_volume_list.fillna(0,inplace=True)
+        class_df_expected_changes = sum(ncloc_changes_volume_list)/(temp_class_df.shape[0]-1)
+        temp_class_metr_dict['expected_size_change_(ED-LOC)'] = class_df_expected_changes
 
-        # retrieve projected addition in TD
-        # sum changes
-        class_df_aggr_td_chng = temp_class_df.loc[temp_class_df['change_volume']!=0,['total_principal']].sum()
-        temp_class_df['td_change_volume'] = temp_class_df['total_principal'].diff(periods=1)
-        temp_class_df['td_change_volume'].fillna(0,inplace=True)
-
-        # sum the td_change on
-        class_df_aggr_td_chng = float(temp_class_df.loc[temp_class_df['change_proneness']==0,['td_change_volume']].sum())
-        class_df_ed_td = class_df_aggr_td_chng/class_df_changes
-        temp_class_metr_dict['expected_td_change_(ED-TD)'] = class_df_ed_td
+        # compute average size of changes in TD across versions of a class
+        td_changes_volume_list = temp_class_df['total_principal'].diff(periods=1)
+        td_changes_volume_list.fillna(0,inplace=True)
+        class_df_expected_td_changes = sum(td_changes_volume_list)/(temp_class_df.shape[0]-1)
+        temp_class_metr_dict['expected_td_change_(ED-TD)'] = class_df_expected_td_changes
 
         temp_class_metr_df = pd.DataFrame.from_records([temp_class_metr_dict], index='class_id', columns=temp_class_metr_dict.keys())
         classes_change_metrics_df = classes_change_metrics_df.append(temp_class_metr_df)
 
     # Sort classes by Change Proneness (CP)
     classes_change_metrics_df.sort_values(by=['change_proneness_(CP)'], ascending=False, inplace=True)
-    
+
     # Keep only first n classes, where n = project_classes_param
     classes_change_metrics_df = classes_change_metrics_df.head(project_classes_param)
 
