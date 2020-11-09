@@ -18,8 +18,8 @@ os.environ['MONGO_HOST'] = '0'
 os.environ['MONGO_PORT'] = '0'
 os.environ['MONGO_DBNAME'] = 'foo'
 
-def test_td_forecasting_mlr(forecasting_project_input, forecasting_horizon_input):
-    with app.test_request_context('/ForecasterToolbox/TDForecasting?horizon=%s&project=%s&regressor=mlr&ground_truth=no&test=no' % (forecasting_horizon_input, forecasting_project_input)):
+def test_td_forecasting_mlr(td_forecasting_project_input, forecasting_horizon_input):
+    with app.test_request_context('/ForecasterToolbox/TDForecasting?horizon=%s&project=%s&regressor=mlr&ground_truth=no&test=no' % (forecasting_horizon_input, td_forecasting_project_input)):
         r = td_forecasting()
         data = json.loads(r.data)
 
@@ -28,8 +28,8 @@ def test_td_forecasting_mlr(forecasting_project_input, forecasting_horizon_input
         assert 'forecasts' in data['results']
         assert len(data['results']['forecasts']) != 0
 
-def test_td_forecasting_lasso(forecasting_project_input, forecasting_horizon_input):
-    with app.test_request_context('/ForecasterToolbox/TDForecasting?horizon=%s&project=%s&regressor=lasso&ground_truth=no&test=no' % (forecasting_horizon_input, forecasting_project_input)):
+def test_td_forecasting_lasso(td_forecasting_project_input, forecasting_horizon_input):
+    with app.test_request_context('/ForecasterToolbox/TDForecasting?horizon=%s&project=%s&regressor=lasso&ground_truth=no&test=no' % (forecasting_horizon_input, td_forecasting_project_input)):
         r = td_forecasting()
         data = json.loads(r.data)
 
@@ -38,8 +38,8 @@ def test_td_forecasting_lasso(forecasting_project_input, forecasting_horizon_inp
         assert 'forecasts' in data['results']
         assert len(data['results']['forecasts']) != 0
 
-def test_td_forecasting_ridge(forecasting_project_input, forecasting_horizon_input):
-    with app.test_request_context('/ForecasterToolbox/TDForecasting?horizon=%s&project=%s&regressor=ridge&ground_truth=no&test=no' % (forecasting_horizon_input, forecasting_project_input)):
+def test_td_forecasting_ridge(td_forecasting_project_input, forecasting_horizon_input):
+    with app.test_request_context('/ForecasterToolbox/TDForecasting?horizon=%s&project=%s&regressor=ridge&ground_truth=no&test=no' % (forecasting_horizon_input, td_forecasting_project_input)):
         r = td_forecasting()
         data = json.loads(r.data)
 
@@ -48,8 +48,8 @@ def test_td_forecasting_ridge(forecasting_project_input, forecasting_horizon_inp
         assert 'forecasts' in data['results']
         assert len(data['results']['forecasts']) != 0
 
-def test_td_forecasting_svr_linear(forecasting_project_input, forecasting_horizon_input):
-    with app.test_request_context('/ForecasterToolbox/TDForecasting?horizon=%s&project=%s&regressor=svr_linear&ground_truth=no&test=no' % (forecasting_horizon_input, forecasting_project_input)):
+def test_td_forecasting_svr_linear(td_forecasting_project_input, forecasting_horizon_input):
+    with app.test_request_context('/ForecasterToolbox/TDForecasting?horizon=%s&project=%s&regressor=svr_linear&ground_truth=no&test=no' % (forecasting_horizon_input, td_forecasting_project_input)):
         r = td_forecasting()
         data = json.loads(r.data)
 
@@ -58,8 +58,8 @@ def test_td_forecasting_svr_linear(forecasting_project_input, forecasting_horizo
         assert 'forecasts' in data['results']
         assert len(data['results']['forecasts']) != 0
 
-def test_td_forecasting_svr_rbf(forecasting_project_input, forecasting_horizon_input):
-    with app.test_request_context('/ForecasterToolbox/TDForecasting?horizon=%s&project=%s&regressor=svr_rbf&ground_truth=no&test=no' % (forecasting_horizon_input, forecasting_project_input)):
+def test_td_forecasting_svr_rbf(td_forecasting_project_input, forecasting_horizon_input):
+    with app.test_request_context('/ForecasterToolbox/TDForecasting?horizon=%s&project=%s&regressor=svr_rbf&ground_truth=no&test=no' % (forecasting_horizon_input, td_forecasting_project_input)):
         r = td_forecasting()
         data = json.loads(r.data)
 
@@ -68,8 +68,8 @@ def test_td_forecasting_svr_rbf(forecasting_project_input, forecasting_horizon_i
         assert 'forecasts' in data['results']
         assert len(data['results']['forecasts']) != 0
 
-def test_td_forecasting_random_forest(forecasting_project_input, forecasting_horizon_input):
-    with app.test_request_context('/ForecasterToolbox/TDForecasting?horizon=%s&project=%s&regressor=random_forest&ground_truth=no&test=no' % (forecasting_horizon_input, forecasting_project_input)):
+def test_td_forecasting_random_forest(td_forecasting_project_input, forecasting_horizon_input):
+    with app.test_request_context('/ForecasterToolbox/TDForecasting?horizon=%s&project=%s&regressor=random_forest&ground_truth=no&test=no' % (forecasting_horizon_input, td_forecasting_project_input)):
         r = td_forecasting()
         data = json.loads(r.data)
 
@@ -78,8 +78,8 @@ def test_td_forecasting_random_forest(forecasting_project_input, forecasting_hor
         assert 'forecasts' in data['results']
         assert len(data['results']['forecasts']) != 0
 
-def test_td_forecasting_auto(forecasting_project_input, forecasting_horizon_input):
-    with app.test_request_context('/ForecasterToolbox/TDForecasting?horizon=%s&project=%s&regressor=auto&ground_truth=no&test=no' % (forecasting_horizon_input, forecasting_project_input)):
+def test_td_forecasting_auto(td_forecasting_project_input, forecasting_horizon_input):
+    with app.test_request_context('/ForecasterToolbox/TDForecasting?horizon=%s&project=%s&regressor=auto&ground_truth=no&test=no' % (forecasting_horizon_input, td_forecasting_project_input)):
         r = td_forecasting()
         data = json.loads(r.data)
 
@@ -88,8 +88,8 @@ def test_td_forecasting_auto(forecasting_project_input, forecasting_horizon_inpu
         assert 'forecasts' in data['results']
         assert len(data['results']['forecasts']) != 0
 
-def test_energy_forecasting_mlr(forecasting_project_input, forecasting_horizon_input):
-    with app.test_request_context('/ForecasterToolbox/EnergyForecasting?horizon=%s&project=%s&regressor=mlr&ground_truth=no&test=no' % (forecasting_horizon_input, forecasting_project_input)):
+def test_energy_forecasting_mlr(energy_forecasting_project_input, forecasting_horizon_input):
+    with app.test_request_context('/ForecasterToolbox/EnergyForecasting?horizon=%s&project=%s&regressor=mlr&ground_truth=no&test=no' % (forecasting_horizon_input, energy_forecasting_project_input)):
         r = energy_forecasting()
         data = json.loads(r.data)
 
@@ -98,8 +98,8 @@ def test_energy_forecasting_mlr(forecasting_project_input, forecasting_horizon_i
         assert 'forecasts' in data['results']
         assert len(data['results']['forecasts']) != 0
 
-def test_energy_forecasting_lasso(forecasting_project_input, forecasting_horizon_input):
-    with app.test_request_context('/ForecasterToolbox/EnergyForecasting?horizon=%s&project=%s&regressor=lasso&ground_truth=no&test=no' % (forecasting_horizon_input, forecasting_project_input)):
+def test_energy_forecasting_lasso(energy_forecasting_project_input, forecasting_horizon_input):
+    with app.test_request_context('/ForecasterToolbox/EnergyForecasting?horizon=%s&project=%s&regressor=lasso&ground_truth=no&test=no' % (forecasting_horizon_input, energy_forecasting_project_input)):
         r = energy_forecasting()
         data = json.loads(r.data)
 
@@ -108,8 +108,8 @@ def test_energy_forecasting_lasso(forecasting_project_input, forecasting_horizon
         assert 'forecasts' in data['results']
         assert len(data['results']['forecasts']) != 0
 
-def test_energy_forecasting_ridge(forecasting_project_input, forecasting_horizon_input):
-    with app.test_request_context('/ForecasterToolbox/EnergyForecasting?horizon=%s&project=%s&regressor=ridge&ground_truth=no&test=no' % (forecasting_horizon_input, forecasting_project_input)):
+def test_energy_forecasting_ridge(energy_forecasting_project_input, forecasting_horizon_input):
+    with app.test_request_context('/ForecasterToolbox/EnergyForecasting?horizon=%s&project=%s&regressor=ridge&ground_truth=no&test=no' % (forecasting_horizon_input, energy_forecasting_project_input)):
         r = energy_forecasting()
         data = json.loads(r.data)
 
@@ -118,8 +118,8 @@ def test_energy_forecasting_ridge(forecasting_project_input, forecasting_horizon
         assert 'forecasts' in data['results']
         assert len(data['results']['forecasts']) != 0
 
-def test_energy_forecasting_svr_linear(forecasting_project_input, forecasting_horizon_input):
-    with app.test_request_context('/ForecasterToolbox/EnergyForecasting?horizon=%s&project=%s&regressor=svr_linear&ground_truth=no&test=no' % (forecasting_horizon_input, forecasting_project_input)):
+def test_energy_forecasting_svr_linear(energy_forecasting_project_input, forecasting_horizon_input):
+    with app.test_request_context('/ForecasterToolbox/EnergyForecasting?horizon=%s&project=%s&regressor=svr_linear&ground_truth=no&test=no' % (forecasting_horizon_input, energy_forecasting_project_input)):
         r = energy_forecasting()
         data = json.loads(r.data)
 
@@ -128,8 +128,8 @@ def test_energy_forecasting_svr_linear(forecasting_project_input, forecasting_ho
         assert 'forecasts' in data['results']
         assert len(data['results']['forecasts']) != 0
 
-def test_energy_forecasting_svr_rbf(forecasting_project_input, forecasting_horizon_input):
-    with app.test_request_context('/ForecasterToolbox/EnergyForecasting?horizon=%s&project=%s&regressor=svr_rbf&ground_truth=no&test=no' % (forecasting_horizon_input, forecasting_project_input)):
+def test_energy_forecasting_svr_rbf(energy_forecasting_project_input, forecasting_horizon_input):
+    with app.test_request_context('/ForecasterToolbox/EnergyForecasting?horizon=%s&project=%s&regressor=svr_rbf&ground_truth=no&test=no' % (forecasting_horizon_input, energy_forecasting_project_input)):
         r = energy_forecasting()
         data = json.loads(r.data)
 
@@ -138,8 +138,8 @@ def test_energy_forecasting_svr_rbf(forecasting_project_input, forecasting_horiz
         assert 'forecasts' in data['results']
         assert len(data['results']['forecasts']) != 0
 
-def test_energy_forecasting_random_forest(forecasting_project_input, forecasting_horizon_input):
-    with app.test_request_context('/ForecasterToolbox/EnergyForecasting?horizon=%s&project=%s&regressor=random_forest&ground_truth=no&test=no' % (forecasting_horizon_input, forecasting_project_input)):
+def test_energy_forecasting_random_forest(energy_forecasting_project_input, forecasting_horizon_input):
+    with app.test_request_context('/ForecasterToolbox/EnergyForecasting?horizon=%s&project=%s&regressor=random_forest&ground_truth=no&test=no' % (forecasting_horizon_input, energy_forecasting_project_input)):
         r = energy_forecasting()
         data = json.loads(r.data)
 
@@ -148,8 +148,8 @@ def test_energy_forecasting_random_forest(forecasting_project_input, forecasting
         assert 'forecasts' in data['results']
         assert len(data['results']['forecasts']) != 0
 
-def test_energy_forecasting_auto(forecasting_project_input, forecasting_horizon_input):
-    with app.test_request_context('/ForecasterToolbox/EnergyForecasting?horizon=%s&project=%s&regressor=auto&ground_truth=no&test=no' % (forecasting_horizon_input, forecasting_project_input)):
+def test_energy_forecasting_auto(energy_forecasting_project_input, forecasting_horizon_input):
+    with app.test_request_context('/ForecasterToolbox/EnergyForecasting?horizon=%s&project=%s&regressor=auto&ground_truth=no&test=no' % (forecasting_horizon_input, energy_forecasting_project_input)):
         r = energy_forecasting()
         data = json.loads(r.data)
 
@@ -158,8 +158,8 @@ def test_energy_forecasting_auto(forecasting_project_input, forecasting_horizon_
         assert 'forecasts' in data['results']
         assert len(data['results']['forecasts']) != 0
 
-def test_dependability_forecasting_mlr(forecasting_project_input, forecasting_horizon_input):
-    with app.test_request_context('/ForecasterToolbox/DependabilityForecasting?horizon=%s&project=%s&regressor=mlr&ground_truth=no&test=no' % (forecasting_horizon_input, forecasting_project_input)):
+def test_dependability_forecasting_mlr(dependability_forecasting_project_input, forecasting_horizon_input):
+    with app.test_request_context('/ForecasterToolbox/DependabilityForecasting?horizon=%s&project=%s&regressor=mlr&ground_truth=no&test=no' % (forecasting_horizon_input, dependability_forecasting_project_input)):
         r = dependability_forecasting()
         data = json.loads(r.data)
 
@@ -168,8 +168,8 @@ def test_dependability_forecasting_mlr(forecasting_project_input, forecasting_ho
         assert 'forecasts' in data['results']
         assert len(data['results']['forecasts']) != 0
 
-def test_dependability_forecasting_lasso(forecasting_project_input, forecasting_horizon_input):
-    with app.test_request_context('/ForecasterToolbox/DependabilityForecasting?horizon=%s&project=%s&regressor=lasso&ground_truth=no&test=no' % (forecasting_horizon_input, forecasting_project_input)):
+def test_dependability_forecasting_lasso(dependability_forecasting_project_input, forecasting_horizon_input):
+    with app.test_request_context('/ForecasterToolbox/DependabilityForecasting?horizon=%s&project=%s&regressor=lasso&ground_truth=no&test=no' % (forecasting_horizon_input, dependability_forecasting_project_input)):
         r = dependability_forecasting()
         data = json.loads(r.data)
 
@@ -178,8 +178,8 @@ def test_dependability_forecasting_lasso(forecasting_project_input, forecasting_
         assert 'forecasts' in data['results']
         assert len(data['results']['forecasts']) != 0
 
-def test_dependability_forecasting_ridge(forecasting_project_input, forecasting_horizon_input):
-    with app.test_request_context('/ForecasterToolbox/DependabilityForecasting?horizon=%s&project=%s&regressor=ridge&ground_truth=no&test=no' % (forecasting_horizon_input, forecasting_project_input)):
+def test_dependability_forecasting_ridge(dependability_forecasting_project_input, forecasting_horizon_input):
+    with app.test_request_context('/ForecasterToolbox/DependabilityForecasting?horizon=%s&project=%s&regressor=ridge&ground_truth=no&test=no' % (forecasting_horizon_input, dependability_forecasting_project_input)):
         r = dependability_forecasting()
         data = json.loads(r.data)
 
@@ -188,8 +188,8 @@ def test_dependability_forecasting_ridge(forecasting_project_input, forecasting_
         assert 'forecasts' in data['results']
         assert len(data['results']['forecasts']) != 0
 
-def test_dependability_forecasting_svr_linear(forecasting_project_input, forecasting_horizon_input):
-    with app.test_request_context('/ForecasterToolbox/DependabilityForecasting?horizon=%s&project=%s&regressor=svr_linear&ground_truth=no&test=no' % (forecasting_horizon_input, forecasting_project_input)):
+def test_dependability_forecasting_svr_linear(dependability_forecasting_project_input, forecasting_horizon_input):
+    with app.test_request_context('/ForecasterToolbox/DependabilityForecasting?horizon=%s&project=%s&regressor=svr_linear&ground_truth=no&test=no' % (forecasting_horizon_input, dependability_forecasting_project_input)):
         r = dependability_forecasting()
         data = json.loads(r.data)
 
@@ -198,8 +198,8 @@ def test_dependability_forecasting_svr_linear(forecasting_project_input, forecas
         assert 'forecasts' in data['results']
         assert len(data['results']['forecasts']) != 0
 
-def test_dependability_forecasting_svr_rbf(forecasting_project_input, forecasting_horizon_input):
-    with app.test_request_context('/ForecasterToolbox/DependabilityForecasting?horizon=%s&project=%s&regressor=svr_rbf&ground_truth=no&test=no' % (forecasting_horizon_input, forecasting_project_input)):
+def test_dependability_forecasting_svr_rbf(dependability_forecasting_project_input, forecasting_horizon_input):
+    with app.test_request_context('/ForecasterToolbox/DependabilityForecasting?horizon=%s&project=%s&regressor=svr_rbf&ground_truth=no&test=no' % (forecasting_horizon_input, dependability_forecasting_project_input)):
         r = dependability_forecasting()
         data = json.loads(r.data)
 
@@ -208,8 +208,8 @@ def test_dependability_forecasting_svr_rbf(forecasting_project_input, forecastin
         assert 'forecasts' in data['results']
         assert len(data['results']['forecasts']) != 0
 
-def test_dependability_forecasting_random_forest(forecasting_project_input, forecasting_horizon_input):
-    with app.test_request_context('/ForecasterToolbox/DependabilityForecasting?horizon=%s&project=%s&regressor=random_forest&ground_truth=no&test=no' % (forecasting_horizon_input, forecasting_project_input)):
+def test_dependability_forecasting_random_forest(dependability_forecasting_project_input, forecasting_horizon_input):
+    with app.test_request_context('/ForecasterToolbox/DependabilityForecasting?horizon=%s&project=%s&regressor=random_forest&ground_truth=no&test=no' % (forecasting_horizon_input, dependability_forecasting_project_input)):
         r = dependability_forecasting()
         data = json.loads(r.data)
 
@@ -218,8 +218,8 @@ def test_dependability_forecasting_random_forest(forecasting_project_input, fore
         assert 'forecasts' in data['results']
         assert len(data['results']['forecasts']) != 0
 
-def test_dependability_forecasting_auto(forecasting_project_input, forecasting_horizon_input):
-    with app.test_request_context('/ForecasterToolbox/DependabilityForecasting?horizon=%s&project=%s&regressor=auto&ground_truth=no&test=no' % (forecasting_horizon_input, forecasting_project_input)):
+def test_dependability_forecasting_auto(dependability_forecasting_project_input, forecasting_horizon_input):
+    with app.test_request_context('/ForecasterToolbox/DependabilityForecasting?horizon=%s&project=%s&regressor=auto&ground_truth=no&test=no' % (forecasting_horizon_input, dependability_forecasting_project_input)):
         r = dependability_forecasting()
         data = json.loads(r.data)
 
@@ -251,8 +251,8 @@ def test_td_forecasting_unprocessable_entity():
         assert r.status_code == 400
         assert 'Unprocessable Entity' in data['message']
 
-def test_td_forecasting_internal_server_error(forecasting_project_input):
-    with app.test_request_context('/ForecasterToolbox/TDForecasting?horizon=1000&project=%s&regressor=mlr&ground_truth=no&test=no' % (forecasting_project_input)):
+def test_td_forecasting_internal_server_error(td_forecasting_project_input):
+    with app.test_request_context('/ForecasterToolbox/TDForecasting?horizon=1000&project=%s&regressor=mlr&ground_truth=no&test=no' % (td_forecasting_project_input)):
         r = td_forecasting()
         data = json.loads(r.data)
 
@@ -267,8 +267,8 @@ def test_energy_forecasting_unprocessable_entity():
         assert r.status_code == 400
         assert 'Unprocessable Entity' in data['message']
 
-def test_energy_forecasting_internal_server_error(forecasting_project_input):
-    with app.test_request_context('/ForecasterToolbox/EnergyForecasting?horizon=1000&project=%s&regressor=mlr&ground_truth=no&test=no' % (forecasting_project_input)):
+def test_energy_forecasting_internal_server_error(energy_forecasting_project_input):
+    with app.test_request_context('/ForecasterToolbox/EnergyForecasting?horizon=1000&project=%s&regressor=mlr&ground_truth=no&test=no' % (energy_forecasting_project_input)):
         r = energy_forecasting()
         data = json.loads(r.data)
 
@@ -283,8 +283,8 @@ def test_dependability_forecasting_unprocessable_entity():
         assert r.status_code == 400
         assert 'Unprocessable Entity' in data['message']
 
-def test_dependability_forecasting_internal_server_error(forecasting_project_input):
-    with app.test_request_context('/ForecasterToolbox/DependabilityForecasting?horizon=1000&project=%s&regressor=mlr&ground_truth=no&test=no' % (forecasting_project_input)):
+def test_dependability_forecasting_internal_server_error(dependability_forecasting_project_input):
+    with app.test_request_context('/ForecasterToolbox/DependabilityForecasting?horizon=1000&project=%s&regressor=mlr&ground_truth=no&test=no' % (dependability_forecasting_project_input)):
         r = dependability_forecasting()
         data = json.loads(r.data)
 

@@ -74,13 +74,23 @@ def forecasting_horizon_input():
     return horizon
 
 @pytest.fixture
-def forecasting_project_input():
-    project = 'Neurasmus'
+def td_forecasting_project_input():
+    project = 'imd_technical_debt'
+    return project
+
+@pytest.fixture
+def energy_forecasting_project_input():
+    project = 'neurasmus'
+    return project
+
+@pytest.fixture
+def dependability_forecasting_project_input():
+    project = 'sdk4ed-healthcare-use-case'
     return project
 
 @pytest.fixture
 def forecasting_project_class_level_input():
-    project = 'apache_kafka_measures'
+    project = 'apache_kafka'
     return project
 
 @pytest.fixture

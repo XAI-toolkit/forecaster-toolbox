@@ -54,22 +54,22 @@ def test_create_regressor_arima(x_array_input, y_array_input):
 def test_create_regressor_auto(x_array_input, y_array_input):
     assert create_regressor('auto', x_array_input, y_array_input)['regressor'] is not None
 
-def test_build_and_train_td(forecasting_project_input, forecasting_horizon_input):
-    result = build_and_train_td(forecasting_horizon_input, forecasting_project_input, 'mlr', 'yes', 'yes')
+def test_build_and_train_td(td_forecasting_project_input, forecasting_horizon_input):
+    result = build_and_train_td(forecasting_horizon_input, td_forecasting_project_input, 'mlr', 'yes', 'yes')
     assert 'parameters' in result
     assert 'forecasts' in result
     assert 'ground_truth' in result
     assert len(result['forecasts']) == forecasting_horizon_input
 
-def test_build_and_train_td_no_test_param(forecasting_project_input, forecasting_horizon_input):
-    result = build_and_train_td(forecasting_horizon_input, forecasting_project_input, 'mlr', 'yes', 'no')
+def test_build_and_train_td_no_test_param(td_forecasting_project_input, forecasting_horizon_input):
+    result = build_and_train_td(forecasting_horizon_input, td_forecasting_project_input, 'mlr', 'yes', 'no')
     assert 'parameters' in result
     assert 'forecasts' in result
     assert 'ground_truth' in result
     assert len(result['forecasts']) == forecasting_horizon_input
 
-# def test_build_and_train_td_arima(forecasting_project_input, forecasting_horizon_input):
-#     result = build_and_train_td(forecasting_horizon_input, forecasting_project_input, 'arima', 'yes', 'no')
+# def test_build_and_train_td_arima(td_forecasting_project_input, forecasting_horizon_input):
+#     result = build_and_train_td(forecasting_horizon_input, td_forecasting_project_input, 'arima', 'yes', 'no')
 #     assert 'parameters' in result
 #     assert 'forecasts' in result
 #     assert 'ground_truth' in result
@@ -83,43 +83,43 @@ def test_build_and_train_td_class_level(forecasting_project_class_level_input, f
     assert 'ground_truth' in result
     assert len(result['forecasts']) == forecasting_horizon_input
 
-def test_build_and_train_dependability(forecasting_project_input, forecasting_horizon_input):
-    result = build_and_train_dependability(forecasting_horizon_input, forecasting_project_input, 'mlr', 'yes', 'yes')
+def test_build_and_train_dependability(dependability_forecasting_project_input, forecasting_horizon_input):
+    result = build_and_train_dependability(forecasting_horizon_input, dependability_forecasting_project_input, 'mlr', 'yes', 'yes')
     assert 'parameters' in result
     assert 'forecasts' in result
     assert 'ground_truth' in result
     assert len(result['forecasts']) == forecasting_horizon_input
 
-def test_build_and_train_dependability_no_test_param(forecasting_project_input, forecasting_horizon_input):
-    result = build_and_train_dependability(forecasting_horizon_input, forecasting_project_input, 'mlr', 'yes', 'no')
+def test_build_and_train_dependability_no_test_param(dependability_forecasting_project_input, forecasting_horizon_input):
+    result = build_and_train_dependability(forecasting_horizon_input, dependability_forecasting_project_input, 'mlr', 'yes', 'no')
     assert 'parameters' in result
     assert 'forecasts' in result
     assert 'ground_truth' in result
     assert len(result['forecasts']) == forecasting_horizon_input
 
-def test_build_and_train_dependability_arima(forecasting_project_input, forecasting_horizon_input):
-    result = build_and_train_dependability(forecasting_horizon_input, forecasting_project_input, 'arima', 'yes', 'no')
+def test_build_and_train_dependability_arima(dependability_forecasting_project_input, forecasting_horizon_input):
+    result = build_and_train_dependability(forecasting_horizon_input, dependability_forecasting_project_input, 'arima', 'yes', 'no')
     assert 'parameters' in result
     assert 'forecasts' in result
     assert 'ground_truth' in result
     assert len(result['forecasts']) == forecasting_horizon_input
 
-def test_build_and_train_energy(forecasting_project_input, forecasting_horizon_input):
-    result = build_and_train_energy(forecasting_horizon_input, forecasting_project_input, 'mlr', 'yes', 'yes')
+def test_build_and_train_energy(energy_forecasting_project_input, forecasting_horizon_input):
+    result = build_and_train_energy(forecasting_horizon_input, energy_forecasting_project_input, 'mlr', 'yes', 'yes')
     assert 'parameters' in result
     assert 'forecasts' in result
     assert 'ground_truth' in result
     assert len(result['forecasts']) == forecasting_horizon_input
 
-def test_build_and_train_energy_no_test_param(forecasting_project_input, forecasting_horizon_input):
-    result = build_and_train_energy(forecasting_horizon_input, forecasting_project_input, 'mlr', 'yes', 'no')
+def test_build_and_train_energy_no_test_param(energy_forecasting_project_input, forecasting_horizon_input):
+    result = build_and_train_energy(forecasting_horizon_input, energy_forecasting_project_input, 'mlr', 'yes', 'no')
     assert 'parameters' in result
     assert 'forecasts' in result
     assert 'ground_truth' in result
     assert len(result['forecasts']) == forecasting_horizon_input
 
-def test_build_and_train_energy_arima(forecasting_project_input, forecasting_horizon_input):
-    result = build_and_train_energy(forecasting_horizon_input, forecasting_project_input, 'arima', 'yes', 'no')
+def test_build_and_train_energy_arima(energy_forecasting_project_input, forecasting_horizon_input):
+    result = build_and_train_energy(forecasting_horizon_input, energy_forecasting_project_input, 'arima', 'yes', 'no')
     assert 'parameters' in result
     assert 'forecasts' in result
     assert 'ground_truth' in result
