@@ -384,13 +384,18 @@ def build_and_train_td(horizon_param, project_param, regressor_param, ground_tru
     # Select sliding window length
     window_size = 2
 
-    # Read dataset
+    # Read data from TD API
     dataset_td = read_from_td_toolbox_api(project_param)
 
     # in case TD API is not responding
     if not isinstance(dataset_td, pd.DataFrame):
-        dataset_td = pd.read_csv('data/%s_measures.csv' % project_param, sep=";", usecols=metrics_td)
+        try:
+            dataset_td = pd.read_csv('data/%s_measures.csv' % project_param, sep=";", usecols=metrics_td)
         # dataset = read_from_database('td_dummy', 'localhost', 27017, project_param, {'_id': 0, 'bugs': 1, 'vulnerabilities': 1, 'code_smells': 1, 'sqale_index': 1, 'reliability_remediation_effort': 1, 'security_remediation_effort': 1})
+        except FileNotFoundError as e:
+            if debug:
+                print(e)
+            return -2
 
     dataset_td['total_principal'] = dataset_td['reliability_remediation_effort'] + dataset_td['security_remediation_effort'] + dataset_td['sqale_index']
     dataset_td = dataset_td.drop(columns=['sqale_index', 'reliability_remediation_effort', 'security_remediation_effort'])
@@ -665,13 +670,18 @@ def build_and_train_dependability(horizon_param, project_param, regressor_param,
     # Select sliding window length
     window_size = 2
 
-    # Read dataset
+    # Read data from Dependability API
     dataset_dep = read_from_dependability_toolbox_api(project_param)
 
     # in case Dependability API is not responding read from csv
     if not isinstance(dataset_dep, pd.DataFrame):
-        dataset_dep = pd.read_csv('data/%s_security_measures.csv' % project_param, sep=";", usecols=metrics_dependability)
+        try:
+            dataset_dep = pd.read_csv('data/%s_security_measures.csv' % project_param, sep=";", usecols=metrics_dependability)
         # dataset = read_from_database('dependability_dummy', 'localhost', 27017, project_param, {'_id': 0, 'Resource_Handling': 1, 'Assignment': 1, 'Exception_Handling': 1, 'Misused_Functionality': 1, 'Security_Index': 1})
+        except FileNotFoundError as e:
+            if debug:
+                print(e)
+            return -2
 
     # Call a function that generates forecasts
     forecast_results = generate_forecasts(horizon_param, project_param, regressor_param, ground_truth_param, test_param, dataset_dep, 'Security_Index', window_size)
@@ -705,13 +715,18 @@ def build_and_train_energy(horizon_param, project_param, regressor_param, ground
     # Select sliding window length
     window_size = 2
 
-    # Read dataset
+    # Read data from Energy API
     dataset_en = read_from_energy_toolbox_api(project_param)
 
     # in case Energy API is not responding
     if not isinstance(dataset_en, pd.DataFrame):
-        dataset_en = pd.read_csv('data/%s_energy_measures.csv' % project_param, sep=";", usecols=metrics_energy)
-        # dataset = read_from_database('energy_dummy', 'localhost', 27017, project_param, {'_id': 0, 'cpu_cycles': 1, 'cache_references': 1, 'energy_CPU(J)': 1})
+        try:
+            dataset_en = pd.read_csv('data/%s_energy_measures.csv' % project_param, sep=";", usecols=metrics_energy)
+            # dataset = read_from_database('energy_dummy', 'localhost', 27017, project_param, {'_id': 0, 'cpu_cycles': 1, 'cache_references': 1, 'energy_CPU(J)': 1})
+        except FileNotFoundError as e:
+            if debug:
+                print(e)
+            return -2
 
     # Call a function that generates forecasts
     forecast_results = generate_forecasts(horizon_param, project_param, regressor_param, ground_truth_param, test_param, dataset_en, 'energy_CPU(J)', window_size)

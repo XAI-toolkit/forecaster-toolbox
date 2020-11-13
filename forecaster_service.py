@@ -47,8 +47,11 @@ def td_forecasting(horizon_param_td=None, project_param_td=None, regressor_param
     else:
         # Call build_and_train() function and retrieve forecasts
         results = build_and_train_td(horizon_param_td, project_param_td, regressor_param_td, ground_truth_param_td, test_param_td)
+        # Handle errors
         if results is -1:
             return internal_server_error('%s steps-ahead forecasting cannot provide reliable results for this project. Please reduce forecasting horizon.' % horizon_param_td)
+        if results is -2:
+            return internal_server_error('Cannot provide forecasts for the selected %s project. Please ensure that a sufficient number of commits is already analysed by the TD Management Toolbox.' % project_param_td)
 
         # Add to database
         import_to_database(results, 'td_forecasts')
@@ -97,6 +100,7 @@ def td_class_level_forecasting(horizon_param_td=None, project_param_td=None, pro
     else:
         # Call build_and_train_td_class_level() function and retrieve forecasts
         results = build_and_train_td_class_level(horizon_param_td, project_param_td, project_classes_param_td, regressor_param_td, ground_truth_param_td, test_param_td)
+        # Handle errors
         if results is -1:
             return internal_server_error('%s steps-ahead forecasting cannot provide reliable results for this project. Please reduce forecasting horizon.' % horizon_param_td)
         if results is -2:
@@ -147,8 +151,11 @@ def dependability_forecasting(horizon_param_dep=None, project_param_dep=None, re
     else:
         # Call build_and_train() function and retrieve forecasts
         results = build_and_train_dependability(horizon_param_dep, project_param_dep, regressor_param_dep, ground_truth_param_dep, test_param_dep)
+        # Handle errors
         if results is -1:
             return internal_server_error('%s steps-ahead forecasting cannot provide reliable results for this project. Please reduce forecasting horizon.' % horizon_param_dep)
+        if results is -2:
+            return internal_server_error('Cannot provide forecasts for the selected %s project. Please ensure that a sufficient number of commits is already analysed by the Dependability Toolbox.' % project_param_dep)
 
         # Add to database
         import_to_database(results, 'dependability_forecasts')
@@ -195,8 +202,11 @@ def energy_forecasting(horizon_param_en=None, project_param_en=None, regressor_p
     else:
         # Call build_and_train() function and retrieve forecasts
         results = build_and_train_energy(horizon_param_en, project_param_en, regressor_param_en, ground_truth_param_en, test_param_en)
+        # Handle errors
         if results is -1:
             return internal_server_error('%s steps-ahead forecasting cannot provide reliable results for this project. Please reduce forecasting horizon.' % horizon_param_en)
+        if results is -2:
+            return internal_server_error('Cannot provide forecasts for the selected %s project. Please ensure that a sufficient number of commits is already analysed by the Energy Toolbox.' % project_param_en)
 
         # Add to database
         import_to_database(results, 'energy_forecasts')
