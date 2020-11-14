@@ -49,7 +49,7 @@ def td_forecasting(horizon_param_td=None, project_param_td=None, regressor_param
         results = build_and_train_td(horizon_param_td, project_param_td, regressor_param_td, ground_truth_param_td, test_param_td)
         # Handle errors
         if results is -1:
-            return internal_server_error('%s steps-ahead forecasting cannot provide reliable results for this project. Please reduce forecasting horizon.' % horizon_param_td)
+            return internal_server_error('%s steps-ahead forecasting cannot provide reliable results for this project. Please ensure that a sufficient number of commits is already analysed by the TD Management Toolbox and reduce forecasting horizon.' % horizon_param_td)
         if results is -2:
             return internal_server_error('Cannot provide forecasts for the selected %s project. Please ensure that a sufficient number of commits is already analysed by the TD Management Toolbox.' % project_param_td)
 
@@ -153,7 +153,7 @@ def dependability_forecasting(horizon_param_dep=None, project_param_dep=None, re
         results = build_and_train_dependability(horizon_param_dep, project_param_dep, regressor_param_dep, ground_truth_param_dep, test_param_dep)
         # Handle errors
         if results is -1:
-            return internal_server_error('%s steps-ahead forecasting cannot provide reliable results for this project. Please reduce forecasting horizon.' % horizon_param_dep)
+            return internal_server_error('%s steps-ahead forecasting cannot provide reliable results for this project. Please ensure that a sufficient number of commits is already analysed by the Dependability Toolbox and reduce forecasting horizon.' % horizon_param_dep)
         if results is -2:
             return internal_server_error('Cannot provide forecasts for the selected %s project. Please ensure that a sufficient number of commits is already analysed by the Dependability Toolbox.' % project_param_dep)
 
@@ -204,7 +204,7 @@ def energy_forecasting(horizon_param_en=None, project_param_en=None, regressor_p
         results = build_and_train_energy(horizon_param_en, project_param_en, regressor_param_en, ground_truth_param_en, test_param_en)
         # Handle errors
         if results is -1:
-            return internal_server_error('%s steps-ahead forecasting cannot provide reliable results for this project. Please reduce forecasting horizon.' % horizon_param_en)
+            return internal_server_error('%s steps-ahead forecasting cannot provide reliable results for this project. Please ensure that a sufficient number of commits is already analysed by the Energy Toolbox and reduce forecasting horizon.' % horizon_param_en)
         if results is -2:
             return internal_server_error('Cannot provide forecasts for the selected %s project. Please ensure that a sufficient number of commits is already analysed by the Energy Toolbox.' % project_param_en)
 
