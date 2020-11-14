@@ -192,7 +192,7 @@ def read_from_td_toolbox_api(project_param):
     # Check wether TD Toolbox API is up and running else return -1
     try:
         # Call TD Toolbox API
-        td_toolbox_url = 'http://195.251.210.147:9941/api/sdk4ed/certh/metrics/%s?limit=40' % project_param
+        td_toolbox_url = 'http://195.251.210.147:8989/api/sdk4ed/certh/metrics/%s?' % project_param
         response = requests.get(td_toolbox_url)
         # Check wether TD Toolbox API returns status code 200 else return -1
         if response.status_code == 200:
