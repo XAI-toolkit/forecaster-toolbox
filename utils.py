@@ -308,7 +308,7 @@ def read_from_energy_toolbox_api(project_param):
                     temp_df = pd.DataFrame()
                     temp_df['cpu_cycles'] = ['0']
                     temp_df['cache_references'] = ['0']
-                    temp_df['energy_CPU(J)'] = [parsed_response[key]['mainplatform1']]
+                    temp_df['energy_CPU(J)'] = [float(parsed_response[key]['mainplatform1'])]
                     energy_data_df = pd.concat([energy_data_df, temp_df])
             # Reset index
             energy_data_df.reset_index(drop=True, inplace=True)
