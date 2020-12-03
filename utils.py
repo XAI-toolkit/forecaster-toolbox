@@ -237,7 +237,9 @@ def read_from_dependability_toolbox_api(project_param):
     mongo_port = 27017
     db_name = 'dependabilityToolbox'
     collection_name = 'securityAssessment'
-    find_query = {'project_name': project_param}
+    project_name = project_param.split(':')[-1]
+    project_user = project_param.split(':')[0]
+    find_query = {'project_name': project_name, 'username': project_user}
     sort_query = [('commit_timestamp',1)]
 
     client = pymongo.MongoClient(mongo_host, mongo_port, serverSelectionTimeoutMS=2000)
