@@ -21,6 +21,8 @@ The output of the three individual web services provided by the Forecasting Tool
 
 ## Installation
 
+### Installation using Anaconda
+
 In this section, we provide instructions on how the user can build the python Flask server of the Forecasting Toolbox from scratch, using the Anaconda virtual environment. The Forecasting Toolbox is developed to run on Unix and Windows systems with python 3.6.* innstalled. We suggest installing python via the Anaconda distribution as it provides an easy way to create a virtual environment and install dependencies. The configuration steps needed, are described below:
 
 - **Step 1**: Download the latest [Anaconda distribution](https://www.anaconda.com/distribution/) and follow the installation steps described in the [Anaconda documentation](https://docs.anaconda.com/anaconda/install/windows/).
@@ -42,7 +44,7 @@ conda install -c saravji pmdarima
 ```
 - **Step 4**: To start the server, use the command promt inside the active environment and execute the commands described in section [Run Server](/sdk4ed/forecaster-toolbox#run-built-in-server).
 
-## Installation using Docker
+### Installation using Docker
 
 In this section, we provide instructions on how the user can build a new Docker Image that contains the python Flask app and the Conda environment of the of the Forecasting Toolbox. We highly recommend the users to select this way of installing the SDK4ED Forecasting Toolbox, as it constitutes the easiest way.
 
@@ -58,6 +60,20 @@ sudo docker run -it --name forecaster-toolbox-test -p 5000:5000 forecaster_toolb
 ``` 
 This command will generate and run a Docker Container named *forecaster-toolbox-test* in interactive session mode, i.e. it will open a command promt inside the Container. 
 - **Step 4**: To start the server, use the command promt inside the running Container and execute the commands described in section [Run Server](/sdk4ed/forecaster-toolbox#run-built-in-server).
+
+### Installation of the Database
+
+Since the TD, Energy and Dependability forecasts are produced "on the fly", the Forecasting Toolbox does not require a running database instance to be functional. However, in case you require access to previously produced forecasting results, a database dedicated to store the output of the Forecasting web services might be of help. In that case, MongoDB is a well-suited option for the purposes of the Forecasting Toolbox.
+
+To quickly install a MongoDB using Docker, open cmd and execute the following command:
+```bash
+sudo docker run --detach  \
+  -p 27017:27017  \
+  --name mongodb  \
+  --volume /home/<user_name>/Desktop/mongo_data:/data/db  \
+  mongo
+```
+This command will generate and run a MongoDB Docker Container named *mongodb*, which will serve as the Forecasting Toolbox dedicated DB.
 
 ## Run Server
 
